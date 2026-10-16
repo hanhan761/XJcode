@@ -2535,10 +2535,10 @@ impl App {
                                     ));
                             }
                                 self.chat_widget.add_plain_history_lines(vec![
-                                    Line::from(vec!["• ".dim(), "Sandbox ready".into()]),
+                                    Line::from(vec!["• ".dim(), (if crate::branding::is_xjcode() { "沙箱已就绪" } else { "Sandbox ready" }).into()]),
                                     Line::from(vec![
                                         "  ".into(),
-                                        "Codex can now safely edit files and execute commands in your computer"
+                                        (if crate::branding::is_xjcode() { "XJCode 现在可以在沙箱权限范围内编辑文件和执行命令" } else { "Codex can now safely edit files and execute commands in your computer" })
                                             .dark_gray(),
                                     ]),
                                 ]);

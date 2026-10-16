@@ -102,7 +102,13 @@ impl EventProcessorWithHumanOutput {
             ThreadItem::AgentMessage { text, .. } => {
                 eprintln!(
                     "{}\n{}",
-                    "codex".style(self.italic).style(self.magenta),
+                    (if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+                        "xjcode"
+                    } else {
+                        "codex"
+                    })
+                    .style(self.italic)
+                    .style(self.magenta),
                     text
                 );
                 self.final_message = Some(text);
@@ -430,7 +436,13 @@ impl EventProcessor for EventProcessorWithHumanOutput {
         {
             eprintln!(
                 "{}\n{}",
-                "codex".style(self.italic).style(self.magenta),
+                (if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+                    "xjcode"
+                } else {
+                    "codex"
+                })
+                .style(self.italic)
+                .style(self.magenta),
                 message
             );
         }

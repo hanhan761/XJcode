@@ -1,5 +1,7 @@
 # XJCode 一键安装与 npm 分发
 
+> 发布状态：0.1.2 已完成本机编程验收；官网当前仍为 0.1.0。下文 0.1.2 的版本化下载地址将在公网发布后可用。
+
 ## 面向普通用户：单文件安装器
 
 从[官方网站](https://xjcode.wenshanzhike.com/)下载 [XJCode-Setup.exe](https://xjcode.wenshanzhike.com/XJCode-Setup.exe) 后双击即可。无需解压、Node.js、npm 或管理员权限。安装器自动选择已有兼容 Node.js；没有兼容版本时，在 XJCode 私有目录安装已校验的官方 Node.js v24.22.0，不替换系统 Node.js。运行时、npm 包和原生组件全部包含在 EXE 中，下载完成后可以离线安装。校园登录和模型调用仍需校园服务可达；登录界面需要 Microsoft Edge WebView2 Runtime。
@@ -17,7 +19,7 @@ xjcode
 需要 Node.js 22 或以上。安装包自带原生程序，无 postinstall 脚本和二次下载：
 
 ~~~powershell
-npm install -g https://xjcode.wenshanzhike.com/releases/0.1.1/xjcode-0.1.1.tgz
+npm install -g https://xjcode.wenshanzhike.com/releases/0.1.2/xjcode-0.1.2.tgz
 ~~~
 
 这是直接安装网站提供的 npm tarball，不依赖 npm 仓库发布。短命令 npm install -g xjcode 则必须先将 npm/xjcode 发布到 npm 官方仓库。本机 npm whoami 返回 ENEEDAUTH，因此尚未发布；不能宣称短命令已经可用。
@@ -40,7 +42,7 @@ npm install -g https://xjcode.wenshanzhike.com/releases/0.1.1/xjcode-0.1.1.tgz
 node scripts/build-xjcode-distribution.mjs
 ~~~
 
-产物：dist/xjcode-0.1.1.tgz；dist/web/XJCode-Setup.exe；dist/web/index.html；dist/web/install.ps1；dist/web/releases/0.1.1/（Node 官方 ZIP、npm 包、校验清单、原生 ZIP）。只发布 dist/web，不上传账号目录或源码工作区。Node 版本及 SHA256 固定在 scripts/node-runtime.json，来源为 https://nodejs.org/dist/v24.22.0/SHASUMS256.txt。
+产物：dist/xjcode-0.1.2.tgz；dist/web/XJCode-Setup.exe；dist/web/index.html；dist/web/install.ps1；dist/web/releases/0.1.2/（Node 官方 ZIP、npm 包、校验清单、原生 ZIP）。只发布 dist/web，不上传账号目录或源码工作区。Node 版本及 SHA256 固定在 scripts/node-runtime.json，来源为 https://nodejs.org/dist/v24.22.0/SHASUMS256.txt。
 
 公开入口使用现有国内服务器上的独立域名 https://xjcode.wenshanzhike.com/ 。旧 www.wenshanzhike.com/xjcode 下载链接继续兼容。安装器、npm tarball 和 Node.js ZIP 均由同一网站提供；安装不依赖 GitHub 或 npm 官方仓库。
 

@@ -1,5 +1,7 @@
 # XJCode
 
+> 发布状态：0.1.2 已完成本机编程验收；官网当前仍为 0.1.0。下文 0.1.2 的版本化下载地址将在公网发布后可用。
+
 面向 Windows PowerShell 的交晓智编程工具。使用校园账号登录，在项目里理解代码、修改文件并运行测试。
 
 [官方网站与一键安装](https://xjcode.wenshanzhike.com/) · [使用文档](README-XJCODE.md) · [安装说明](INSTALLATION.md)
@@ -15,7 +17,7 @@ irm https://xjcode.wenshanzhike.com/install.ps1 | iex
 已有 Node.js 22+：
 
 ```powershell
-npm install -g https://xjcode.wenshanzhike.com/releases/0.1.1/xjcode-0.1.1.tgz
+npm install -g https://xjcode.wenshanzhike.com/releases/0.1.2/xjcode-0.1.2.tgz
 ```
 
 也可以从网站下载单文件安装器，双击安装。下载由国内自有服务器提供，无需通过 GitHub 或 npm 官方仓库。支持 Windows x64，校园登录需要 WebView2 和有效校园账号。

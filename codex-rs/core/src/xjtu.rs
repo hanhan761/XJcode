@@ -70,9 +70,7 @@ pub(crate) async fn stream(prompt: &Prompt, model_info: &ModelInfo) -> Result<Re
                 match parsed {
                     Ok(reply) => return events(reply, &tools),
                     Err(e) if attempt < 2 => {
-                        request = format!(
-                            "{base}\n上一次响应格式不正确：{e}。请重新生成完整协议对象；尚未执行任何工具。"
-                        );
+                        request = protocol::repair_prompt(&base, &raw, &e.to_string())?;
                     }
                     Err(e) => return Err(e),
                 }
