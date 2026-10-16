@@ -16,7 +16,10 @@ def point(link, target):
     os.replace(candidate, link)
 def get(url):
     return subprocess.check_output(['curl','--noproxy','*','-fsS','--max-time','15',url])
-lock = open('/var/lock/wenshanzhike-deploy.lock','a')
+lock_path = '/var/lock/wenshanzhike-deploy.lock'
+inherited = os.environ.get('XJCODE_DEPLOY_LOCK_FD')
+lock = os.fdopen(int(inherited), 'a', closefd=False) if inherited else open(lock_path, 'a')
+assert os.fstat(lock.fileno()).st_ino == os.stat(lock_path).st_ino
 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
 # The controller writes this marker only after the bounded upload has completed.
 deadline = time.monotonic() + 1800
@@ -28,9 +31,9 @@ usage = shutil.disk_usage(base)
 with zipfile.ZipFile(args.archive) as archive:
     manifest = json.loads(archive.read('deployment.json'))
     version = manifest['version']
-    assert version == '0.1.1'
+    assert version == '0.1.2'
     release_id = manifest['release']
-    assert release_id == '20261016-0.1.1'
+    assert release_id == '20261016-0.1.2'
     total = sum(entry.file_size for entry in archive.infolist())
     assert usage.free - total > max(usage.total * .15, 2 * 1024**3), 'disk reserve'
     package_link = base / 'xjcode'
@@ -53,9 +56,9 @@ for name, expected in manifest['files'].items(): assert digest(release / name) =
 old = (base / previous_package).resolve()
 node_name = 'node-v24.22.0-win-x64.zip'
 old_node = old / 'releases/0.1.0' / node_name
-release_manifest = json.loads((release / 'releases/0.1.1/release-manifest.json').read_text())
+release_manifest = json.loads((release / 'releases/0.1.2/release-manifest.json').read_text())
 assert digest(old_node) == release_manifest['node']['sha256']
-os.link(old_node, release / 'releases/0.1.1' / node_name)
+os.link(old_node, release / 'releases/0.1.2' / node_name)
 os.symlink('../../20261016-0.1.0/releases/0.1.0', release / 'releases/0.1.0')
 guide.mkdir(parents=True)
 for name in ['index.html','style.css','app.js','favicon.svg','install.ps1']:
@@ -64,9 +67,9 @@ record = {'previousPackage':previous_package,'previousGuide':previous_guide,'art
 try:
     point(package_link, 'xjcode-releases/' + release_id)
     point(guide_link, 'releases/20261016-v4')
-    for name in ['index.html','install.ps1','releases/0.1.1/release-manifest.json']:
+    for name in ['index.html','install.ps1','releases/0.1.2/release-manifest.json']:
         assert hashlib.sha256(get('https://xjcode.wenshanzhike.com/' + name)).hexdigest() == manifest['files'][name], name
-    for name in ['XJCode-Setup.exe','releases/0.1.1/xjcode-0.1.1.tgz','releases/0.1.1/xjcode-windows-x64.zip']:
+    for name in ['XJCode-Setup.exe','releases/0.1.2/xjcode-0.1.2.tgz','releases/0.1.2/xjcode-windows-x64.zip']:
         with (release / name).open('rb') as f: expected = f.read(1024)
         actual = subprocess.check_output(['curl','--noproxy','*','-fsS','--range','0-1023','--max-time','15','https://xjcode.wenshanzhike.com/' + name])
         assert actual == expected, name
@@ -82,4 +85,4 @@ except Exception:
 ops = base / 'xjcode-site/ops/20261016-v4'
 ops.mkdir(parents=True)
 (ops / 'verified.json').write_text(json.dumps(record, indent=2))
-print('XJCode 0.1.1 activated; hashes, old URL compatibility and 60-second health checks passed')
+print('XJCode 0.1.2 activated; hashes, old URL compatibility and 60-second health checks passed')
