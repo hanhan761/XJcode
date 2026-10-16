@@ -75,3 +75,11 @@ XJCode 独立青绿色主题、中文欢迎区、模型/项目路径和中文输
 - 最终公开 EXE 在移除系统 Node.js 的隔离环境中再次安装成功，使用私有 Node.js，npm 安装及 xjcode --version 均返回 0。
 - 发布目录已启用版本文件长期缓存；主站默认 no-store 曾导致 npm 重复下载，现公开响应头已验证为 public, max-age=31536000, immutable。
 - 关闭代理、独立 npm 配置和缓存下，直接 npm install -g https://www.wenshanzhike.com/xjcode/releases/0.1.0/xjcode-0.1.0.tgz --ignore-scripts 成功（退出 0），安装后版本检查通过。该次测试在缓存规则修复前启动，共下载三次，耗时约 16 分钟；不能把这次耗时宣传为正常安装速度。
+
+## 独立域名与三步教程（2026-10-16）
+
+- https://xjcode.wenshanzhike.com/ 与 /guide 已启用受信任 HTTPS。DNS 与公网直连验证通过；首次 ACME 网络超时自动回滚，重试签发成功。
+- 教程为安装、校园登录、第一个任务三个步骤；提供命令复制、折叠 npm 安装和常见问题。桌面、390px 与 320px 手机布局无横向溢出，目录高亮及复制内容验证通过，正式页面无 JavaScript 错误。
+- 新域名下 EXE、npm tarball 与 Node ZIP 的 HTTPS Range 请求均返回 206，下载字节与已验证制品一致；发行 manifest 完全一致。复用现有不可变二进制包，没有重新修改 0.1.0 包。
+- 新域名下载的 install.ps1 与源码 SHA256 一致，默认依赖地址全部为新域名；在隔离安装目录用本地已校验包执行，安装及版本检查返回 0。本次没有重复下载完整大型安装包。
+- 最终静态教程版本为 20261016-v3，独立 current 原子切换，旧教程版本与 Caddy 配置保留；主站健康检查没有新增失败。原有三项 MatterSwarm 域名证书失败仍不在本任务变更范围。

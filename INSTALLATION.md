@@ -42,7 +42,7 @@ node scripts/build-xjcode-distribution.mjs
 
 产物：dist/xjcode-0.1.0.tgz；dist/web/XJCode-Setup.exe；dist/web/index.html；dist/web/install.ps1；dist/web/releases/0.1.0/（Node 官方 ZIP、npm 包、校验清单、原生 ZIP）。只发布 dist/web，不上传账号目录或源码工作区。Node 版本及 SHA256 固定在 scripts/node-runtime.json，来源为 https://nodejs.org/dist/v24.22.0/SHASUMS256.txt。
 
-公开入口使用现有国内服务器的独立 /xjcode/ 路径。安装器、npm tarball 和 Node.js ZIP 均由同一网站提供；安装不依赖 GitHub 或 npm 官方仓库。
+公开入口使用现有国内服务器上的独立域名 https://xjcode.wenshanzhike.com/ 。旧 www.wenshanzhike.com/xjcode 下载链接继续兼容。安装器、npm tarball 和 Node.js ZIP 均由同一网站提供；安装不依赖 GitHub 或 npm 官方仓库。
 
 无需 Node.js 的 PowerShell 安装命令：
 
