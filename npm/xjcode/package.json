@@ -1,0 +1,27 @@
+{
+  "name": "xjcode",
+  "version": "0.1.0",
+  "description": "XJCode — 交晓智 PowerShell 编程助手",
+  "license": "Apache-2.0",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "xjcode": "bin/xjcode.cjs"
+  },
+  "files": [
+    "bin/",
+    "native/",
+    "release.json",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "homepage": "https://xjcode.matterswarm.com"
+}
