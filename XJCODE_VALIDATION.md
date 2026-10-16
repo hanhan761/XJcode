@@ -117,3 +117,17 @@ XJCode 独立青绿色主题、中文欢迎区、模型/项目路径和中文输
 - 站外直连核对网页、install.ps1、manifest 完整字节一致；EXE、npm、原生 ZIP、Node ZIP 的 HTTPS Range 为 206 且内容与本机制品一致。新旧域名下载地址及旧 0.1.0 manifest 均可用。
 - 官网下载的 install.ps1 在移除系统 Node 的隔离环境中，使用本地已校验制品完成私有 Node 安装与 npm 安装，返回 xjcode 0.1.2，退出 0。本项未重复下载全部大型制品。
 - 站外 20 路探测中一次主站 TCP 超时，定向重试通过；其余入口正常。服务器内部健康检查与发布前一致，仅三个既有 MatterSwarm 本地证书检查失败；edge/backend 重启数 0、OOM 为 false。移动端 www 跳转 m 已额外验证。
+
+
+## 0.1.3 默认沙箱与工具完成状态修复
+
+- 复查用户实际会话：apply_patch 新增文件缺少每行 + 前缀；PowerShell 写文件 Access denied；模型两次误称完成，目录为空。0.1.2 的完全访问验收遗漏默认沙箱，这是此前验证范围的缺口。
+- 最小真实复现：scripts/check-xjcode-workspace.py 在旧版返回 projectWritten=false，新版返回 projectWritten=true、outsideDenied=true。无需模型即可重现，检查不关闭沙箱。
+- 根因：SSH 依赖过滤按用户目录的第一级子目录匹配，桌面子目录中的 SSH 密钥使整个 Desktop 下的项目都失去写入能力。现按规范路径的祖先/后代关系过滤，仍排除密钥自身及包含它的根目录，允许无关兄弟项目。新增失败用例先红后绿，4 项 SSH 依赖专项测试通过。
+- 交晓智传输保留 custom input_format，并附明确的新增/修改补丁示例；核心在发出 apply_patch 事件前调用真实补丁解析器，格式错误进入有限纠错。
+- final 支持 blocked 状态。检测最近一批明确失败的工具结果（包含 PowerShell 非终止错误）后，拒绝成功状态 final，要求纠正工具调用或明确报告任务未完成；不是以退出码 0 或已生成的代码推断成功。原生 19 项测试通过。该规则针对已识别执行结果，不是对所有自然语言结论的通用真实性证明。
+- ConPTY 真实交互启动，不设置完全访问，使用用户原文 HTML/SVG 请求，在原桌面项目内真实 apply_patch 成功生成 pelican-bike.html（7447 bytes，含 SVG 与动画）。权限记录为 managed/workspace-write，成功结果与文件实际存在相符。
+- 最终 npm 包安装后，引擎 SHA256 与上述验收引擎相同；通过实际 xjcode 命令恢复该会话并读取 HTML，退出 0，文件内容未改。原 Codex config.toml、auth.json、用户 .npmrc 指纹一致。
+- 无 Node PATH 的隔离安装使用本地已校验制品，自动配置私有 Node.js、npm 安装、xjcode 0.1.3 版本检查均通过。ZIP CRC 与 npm 文件名单检查通过，不含用户凭据。
+- 核心适配专项 3 项测试通过，包含真实补丁解析器拒绝缺少 + 的新增文件补丁；blocked 不改变最终 text，保持调用方 JSON 输出 schema 的契约。
+- 最终兼容性修正后的二进制再次在原桌面项目通过 workspace-write/never 的真实 apply_patch 写入验收，输出内容逐字核对通过；专用临时验证文件已清理，用户 HTML 保留。

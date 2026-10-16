@@ -59,7 +59,9 @@ pub(crate) async fn stream(prompt: &Prompt, model_info: &ModelInfo) -> Result<Re
                     .complete(&settings.workspace_id, model, &request)
                     .await?;
                 let parsed = AgentReply::parse(&raw, &tools).and_then(|reply| {
-                    if let (Some(schema), AgentReply::Final { text }) = (&schema, &reply) {
+                    validate_tool_inputs(&reply, &tools)?;
+                    protocol::validate_final_outcome(&history, &reply)?;
+                    if let (Some(schema), AgentReply::Final { text, .. }) = (&schema, &reply) {
                         let v: Value = serde_json::from_str(text)
                             .map_err(|_| anyhow::anyhow!("最终 text 不是 JSON"))?;
                         let validator = jsonschema_validate(schema, &v)?;
@@ -97,6 +99,19 @@ pub(crate) async fn stream(prompt: &Prompt, model_info: &ModelInfo) -> Result<Re
         consumer_dropped,
     })
 }
+fn validate_tool_inputs(reply: &AgentReply, tools: &[Tool]) -> anyhow::Result<()> {
+    if let AgentReply::ToolCalls { calls, .. } = reply {
+        for call in calls {
+            if tools.iter().any(|t| {
+                t.name == "apply_patch" && t.kind == "custom" && t.qualified_name() == call.name
+            }) {
+                codex_apply_patch::parse_patch(call.arguments.as_str().ok_or_else(|| anyhow::anyhow!("apply_patch input 必须是字符串"))?)
+                    .map_err(|e| anyhow::anyhow!("apply_patch 语法错误：{e}。新增文件的每行（含空行）必须以 + 开头，修改须使用 @@ 与空格/减号/加号前缀。修复后再返回工具调用。"))?;
+            }
+        }
+    }
+    Ok(())
+}
 fn jsonschema_validate(schema: &Value, value: &Value) -> anyhow::Result<bool> {
     xjcode_native::protocol::validate_value(schema, value)
 }
@@ -110,7 +125,8 @@ fn events(reply: AgentReply, tools: &[Tool]) -> anyhow::Result<Vec<ResponseEvent
     }];
     let final_turn = matches!(&reply, AgentReply::Final { .. });
     let (text, calls) = match reply {
-        AgentReply::Final { text } => (text, vec![]),
+        // Preserve text verbatim: callers may require a JSON output schema.
+        AgentReply::Final { text, .. } => (text, vec![]),
         AgentReply::ToolCalls { text, calls } => (text, calls),
     };
     if !text.is_empty() {
@@ -156,10 +172,21 @@ fn events(reply: AgentReply, tools: &[Tool]) -> anyhow::Result<Vec<ResponseEvent
 mod tests {
     use super::*;
     #[test]
+    fn rejects_missing_add_line_prefix_before_execution() {
+        let tools =
+            protocol::tools_from_specs(&[json!({"type":"custom","name":"apply_patch"})]).unwrap();
+        for (line, valid) in [("<!DOCTYPE html>", false), ("+<!DOCTYPE html>", true)] {
+            let raw = json!({"type":"tool_calls","calls":[{"name":"apply_patch","arguments":{"input":format!("*** Begin Patch\n*** Add File: page.html\n{line}\n*** End Patch")}}]}).to_string();
+            let reply = AgentReply::parse(&raw, &tools).unwrap();
+            assert_eq!(validate_tool_inputs(&reply, &tools).is_ok(), valid);
+        }
+    }
+    #[test]
     fn final_emits_complete_message() {
         let events = events(
             AgentReply::Final {
                 text: "完成".into(),
+                blocked: false,
             },
             &[],
         )

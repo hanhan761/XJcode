@@ -1429,13 +1429,16 @@ fn is_ssh_config_dependency_root(
     user_profile: &Path,
     dependency_paths: &[PathBuf],
 ) -> bool {
-    let Some(child_name) = user_profile_child_name(root, user_profile) else {
+    if user_profile_child_name(root, user_profile).is_none() {
         return false;
-    };
-
+    }
+    // Exclude roots that contain an SSH dependency (or are inside it), not
+    // unrelated sibling projects that happen to share Desktop/Documents.
+    let root_key = canonical_path_key(root);
     dependency_paths.iter().any(|path| {
-        user_profile_child_name(path, user_profile)
-            .is_some_and(|dependency_child| child_name.eq_ignore_ascii_case(&dependency_child))
+        let dependency_key = canonical_path_key(path);
+        Path::new(&dependency_key).starts_with(&root_key)
+            || Path::new(&root_key).starts_with(&dependency_key)
     })
 }
 
@@ -2295,6 +2298,27 @@ mod tests {
             &other_root,
             &user_profile
         ));
+    }
+
+    #[test]
+    fn ssh_dependency_does_not_block_sibling_desktop_project() {
+        let tmp = TempDir::new().expect("tempdir");
+        let home = tmp.path().join("home");
+        let desktop = home.join("Desktop");
+        let key = desktop.join("server-keys/id.pem");
+        let project = desktop.join("鹈鹕");
+        fs::create_dir_all(key.parent().unwrap()).unwrap();
+        fs::create_dir_all(&project).unwrap();
+        fs::write(&key, "fixture").unwrap();
+        let deps = vec![key.clone()];
+        assert!(!super::is_ssh_config_dependency_root(
+            &project, &home, &deps
+        ));
+        for protected in [&desktop, key.parent().unwrap(), &key] {
+            assert!(super::is_ssh_config_dependency_root(
+                protected, &home, &deps
+            ));
+        }
     }
 
     #[test]
