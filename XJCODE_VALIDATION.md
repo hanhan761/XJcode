@@ -64,3 +64,13 @@ XJCode 独立青绿色主题、中文欢迎区、模型/项目路径和中文输
 - 已使用最终 EXE 更新本机用户安装；xjcode 指向 LocalAppData/XJCode/commands/xjcode.cmd，codex 仍指向原 npm/codex.ps1。原 Codex config.toml、auth.json 和用户 .npmrc 内容指纹未变。
 - npm tarball 共 18 个文件，包含原生引擎，不含 PEM、DPAPI 凭据或 .env。安装器约 160 MiB，npm 包约 124 MiB。
 - npm 官方短包名尚未发布，使用自有网站 tarball URL 安装。
+
+## 公网分发上线（2026-10-16）
+
+- 公开入口 https://www.wenshanzhike.com/xjcode/，网站、安装脚本、EXE、Node ZIP、npm tarball 均由国内自有服务器提供。关闭代理的本机 HTTPS 检查通过；/xjcode 自动重定向到 /xjcode/。
+- 服务器校验发布包与全部文件 SHA256 后激活独立目录，60 秒观察通过。临时直传入口已撤销，未新增后台服务。
+- 公网 PowerShell 安装脚本成功下载并校验 npm 包和官方 Node ZIP；无 Node 的隔离目录自动安装运行时。测试进程初始 PATHEXT 异常导致 npm 未启动，恢复机器标准 PATHEXT 后，同一安装实现完成 npm 安装与版本检查；未更改系统环境。
+- 主站完整健康检查的前后差异为空：主站与教学入口正常，原有三个 MatterSwarm 域名证书检查仍失败，未改动这些服务。
+- 源码已推送至 https://github.com/hanhan761/XJcode 的 main 分支，保留上游许可证与来源。源码扫描未发现校园账号、密码、私钥或 token。发行包不进入 Git 源码历史。
+- 最终公开 EXE 在移除系统 Node.js 的隔离环境中再次安装成功，使用私有 Node.js，npm 安装及 xjcode --version 均返回 0。
+- 发布目录已启用版本文件长期缓存；主站默认 no-store 曾导致 npm 重复下载，现公开响应头已验证为 public, max-age=31536000, immutable。
