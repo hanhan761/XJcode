@@ -4,12 +4,12 @@ XJCode 是基于 OpenAI Codex 源码的本地编程命令行工具，使用西�
 
 ## 安装与开始
 
-普通用户：从[官方网站](https://www.wenshanzhike.com/xjcode/)下载并双击 **XJCode-Setup.exe**，自动准备 Node.js 和 XJCode，无需解压或管理员权限。安装完成后重新打开 PowerShell。
+普通用户：从[官方网站](https://xjcode.wenshanzhike.com/)下载并双击 **XJCode-Setup.exe**，自动准备 Node.js 和 XJCode，无需解压或管理员权限。安装完成后重新打开 PowerShell。
 
 已有 Node.js 22 或以上：直接用 npm 安装 .tgz 文件或网站提供的 tarball URL。安装命令：
 
 ~~~powershell
-npm install -g https://www.wenshanzhike.com/xjcode/releases/0.1.0/xjcode-0.1.0.tgz
+npm install -g https://xjcode.wenshanzhike.com/releases/0.1.0/xjcode-0.1.0.tgz
 xjcode login
 cd D:\your-project
 xjcode

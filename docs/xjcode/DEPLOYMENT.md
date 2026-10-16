@@ -1,13 +1,13 @@
 # 网站分发维护
 
-公开入口：https://www.wenshanzhike.com/xjcode/
+公开入口：https://xjcode.wenshanzhike.com/ ，/guide 提供同一上手教程。旧 https://www.wenshanzhike.com/xjcode/ 安装路径继续兼容。
 
-本地运行 scripts/build-xjcode-distribution.mjs，产出 dist/web。服务器仅解压校验静态文件，不编译源码、不运行 npm 安装。安装时的 npm tarball、Node ZIP、EXE 和 manifest 均来自此站点。
+静态教程源码位于 site/，安装脚本位于 scripts/bootstrap-xjcode.ps1。所有编译与打包在开发机完成；服务器只校验静态制品、切换版本链接与重载 Caddy。
 
-发布到共享 Caddy 静态挂载中的 xjcode-releases/<release-id>，用相对符号链接 xjcode 指向已校验目录。切换前取得现有部署锁；切换后验证 HTTPS 首页、全部文件摘要、安装与既有网站健康，观察至少 60 秒。保留旧目录；回滚只原子切回旧链接，首次发布失败则撤下新链接。主站后续更新必须保留 xjcode 与 xjcode-releases，避免全目录覆盖。
+共享 Caddy 的新域名块分别提供教程与安装文件：教程为 /srv/app/xjcode-site/current；已发布 v0.1.0 安装包复用 /srv/app/xjcode。新域名下 /releases/* 和 /XJCode-Setup.exe 直接服务同一份经过验证的文件，不重打包或修改不可变的 v0.1.0 包。网页 install.ps1 使用新域名下载全部依赖，离线 EXE 已包含依赖。
 
-不要上传 .xjcode、.codex、.env、PEM、个人配置或构建日志。GitHub 保存源码和发行备份；普通用户安装无需 GitHub 连通。
+持有 /var/lock/wenshanzhike-deploy.lock 后激活。保留旧 Caddy 配置和版本目录；失败时恢复配置并切回原 current。观察至少 60 秒，检查新旧网址 TLS、安装文件摘要与主站健康。主站发布必须保留 xjcode、xjcode-releases、xjcode-site 目录与对应 Caddy 路由。
 
-共享主站使用 SPA 回退，因此 /xjcode/* 需要独立静态 handler：root /srv/app，try_files {path} {path}/index.html，file_server；/xjcode 重定向到 /xjcode/。该 handler 与版本链接应一起保留。
+版本化 /releases/* 使用 Cache-Control: public, max-age=31536000, immutable；根网页和 install.ps1 不长期缓存。发布新二进制时使用新版本号，不覆盖已发布包。GitHub 保存源码，普通用户安装无需访问 GitHub 或 npm 官方仓库。
 
-版本化 /xjcode/releases/* 文件使用 Cache-Control: public, max-age=31536000, immutable，避免 npm 读取包清单时重复下载。已发布版本内容不可覆盖，更新时使用新版本目录。安装页与根 install.ps1 不使用长期缓存。
+禁止上传账号目录、.env、PEM、凭据、个人配置或构建日志。

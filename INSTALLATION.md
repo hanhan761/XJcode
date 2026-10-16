@@ -2,7 +2,7 @@
 
 ## 面向普通用户：单文件安装器
 
-从[官方网站](https://www.wenshanzhike.com/xjcode/)下载 [XJCode-Setup.exe](https://www.wenshanzhike.com/xjcode/XJCode-Setup.exe) 后双击即可。无需解压、Node.js、npm 或管理员权限。安装器自动选择已有兼容 Node.js；没有兼容版本时，在 XJCode 私有目录安装已校验的官方 Node.js v24.22.0，不替换系统 Node.js。运行时、npm 包和原生组件全部包含在 EXE 中，下载完成后可以离线安装。校园登录和模型调用仍需校园服务可达；登录界面需要 Microsoft Edge WebView2 Runtime。
+从[官方网站](https://xjcode.wenshanzhike.com/)下载 [XJCode-Setup.exe](https://xjcode.wenshanzhike.com/XJCode-Setup.exe) 后双击即可。无需解压、Node.js、npm 或管理员权限。安装器自动选择已有兼容 Node.js；没有兼容版本时，在 XJCode 私有目录安装已校验的官方 Node.js v24.22.0，不替换系统 Node.js。运行时、npm 包和原生组件全部包含在 EXE 中，下载完成后可以离线安装。校园登录和模型调用仍需校园服务可达；登录界面需要 Microsoft Edge WebView2 Runtime。
 
 完成后重新打开 PowerShell：
 
@@ -17,7 +17,7 @@ xjcode
 需要 Node.js 22 或以上。安装包自带原生程序，无 postinstall 脚本和二次下载：
 
 ~~~powershell
-npm install -g https://www.wenshanzhike.com/xjcode/releases/0.1.0/xjcode-0.1.0.tgz
+npm install -g https://xjcode.wenshanzhike.com/releases/0.1.0/xjcode-0.1.0.tgz
 ~~~
 
 这是直接安装网站提供的 npm tarball，不依赖 npm 仓库发布。短命令 npm install -g xjcode 则必须先将 npm/xjcode 发布到 npm 官方仓库。本机 npm whoami 返回 ENEEDAUTH，因此尚未发布；不能宣称短命令已经可用。
@@ -47,5 +47,5 @@ node scripts/build-xjcode-distribution.mjs
 无需 Node.js 的 PowerShell 安装命令：
 
 ```powershell
-irm https://www.wenshanzhike.com/xjcode/install.ps1 | iex
+irm https://xjcode.wenshanzhike.com/install.ps1 | iex
 ```

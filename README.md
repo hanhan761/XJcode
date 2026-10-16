@@ -2,20 +2,20 @@
 
 面向 Windows PowerShell 的交晓智编程工具。使用校园账号登录，在项目里理解代码、修改文件并运行测试。
 
-[官方网站与一键安装](https://www.wenshanzhike.com/xjcode/) · [使用文档](README-XJCODE.md) · [安装说明](INSTALLATION.md)
+[官方网站与一键安装](https://xjcode.wenshanzhike.com/) · [使用文档](README-XJCODE.md) · [安装说明](INSTALLATION.md)
 
 ## 安装
 
 PowerShell 一条命令，自动准备缺少的 Node.js：
 
 ```powershell
-irm https://www.wenshanzhike.com/xjcode/install.ps1 | iex
+irm https://xjcode.wenshanzhike.com/install.ps1 | iex
 ```
 
 已有 Node.js 22+：
 
 ```powershell
-npm install -g https://www.wenshanzhike.com/xjcode/releases/0.1.0/xjcode-0.1.0.tgz
+npm install -g https://xjcode.wenshanzhike.com/releases/0.1.0/xjcode-0.1.0.tgz
 ```
 
 也可以从网站下载单文件安装器，双击安装。下载由国内自有服务器提供，无需通过 GitHub 或 npm 官方仓库。支持 Windows x64，校园登录需要 WebView2 和有效校园账号。

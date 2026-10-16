@@ -15,7 +15,7 @@ const nativeZip=path.resolve(process.argv[2]||path.join(root,'dist', 'xjcode-'+v
 const hash=async file=>crypto.createHash('sha256').update(await fs.readFile(file)).digest('hex');
 const nativeHash=await hash(nativeZip);
 await fs.writeFile(path.join(packageDir,'release.json'),JSON.stringify({
- version,nativeUrl:'https://www.wenshanzhike.com/xjcode/releases/'+version+'/xjcode-windows-x64.zip',nativeSha256:nativeHash
+ version,nativeUrl:'https://xjcode.wenshanzhike.com/releases/'+version+'/xjcode-windows-x64.zip',nativeSha256:nativeHash
 },null,2)+'\n');
 const nativeDir=path.join(packageDir,'native');
 try{
@@ -52,7 +52,8 @@ const args=['/nologo','/target:winexe','/platform:x64','/codepage:65001',
 for(const file of ['bootstrap-xjcode.ps1','release-manifest.json',tarball,node.file])
  args.push('/resource:'+path.join(release,file)+',payload.'+file);
 execFileSync(csc,args,{cwd:root,windowsHide:true,stdio:'pipe'});
-await fs.copyFile(path.join(root,'site/index.html'),path.join(web,'index.html'));
+for(const file of ['index.html','style.css','app.js','favicon.svg'])
+ await fs.copyFile(path.join(root,'site',file),path.join(web,file));
 await fs.copyFile(path.join(root,'scripts/bootstrap-xjcode.ps1'),path.join(web,'install.ps1'));
 const checksum=(await hash(path.join(web,'XJCode-Setup.exe')))+'  XJCode-Setup.exe\n';
 await fs.writeFile(path.join(web,'SHA256SUMS.txt'),checksum);
