@@ -74,3 +74,4 @@ XJCode 独立青绿色主题、中文欢迎区、模型/项目路径和中文输
 - 源码已推送至 https://github.com/hanhan761/XJcode 的 main 分支，保留上游许可证与来源。源码扫描未发现校园账号、密码、私钥或 token。发行包不进入 Git 源码历史。
 - 最终公开 EXE 在移除系统 Node.js 的隔离环境中再次安装成功，使用私有 Node.js，npm 安装及 xjcode --version 均返回 0。
 - 发布目录已启用版本文件长期缓存；主站默认 no-store 曾导致 npm 重复下载，现公开响应头已验证为 public, max-age=31536000, immutable。
+- 关闭代理、独立 npm 配置和缓存下，直接 npm install -g https://www.wenshanzhike.com/xjcode/releases/0.1.0/xjcode-0.1.0.tgz --ignore-scripts 成功（退出 0），安装后版本检查通过。该次测试在缓存规则修复前启动，共下载三次，耗时约 16 分钟；不能把这次耗时宣传为正常安装速度。
