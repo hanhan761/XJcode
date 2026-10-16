@@ -233,6 +233,12 @@ impl EmptyStateAnimation {
     }
 
     fn paint_frame(&mut self, area: Rect, buffer: &mut Buffer, phase: f64, opacity: f32) {
+        // Fine emblem strokes need more idle contrast than the solid upstream mark.
+        let opacity = if crate::branding::is_xjcode() {
+            0.32 + 0.68 * opacity
+        } else {
+            opacity
+        };
         let background = terminal_palette::default_bg();
         let color_level = if background.is_some() {
             terminal_palette::effective_stdout_color_level()

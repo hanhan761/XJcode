@@ -24,10 +24,7 @@ async fn run() -> Result<()> {
     let home = auth::home()?;
     match first {
         "--version" | "-V" => {
-            println!(
-                "xjcode {} (Codex e790ce2 · 交晓智)",
-                env!("CARGO_PKG_VERSION")
-            );
+            println!("xjcode {} · 交晓智", env!("CARGO_PKG_VERSION"));
             return Ok(());
         }
         "--help" | "-h" | "help" => {
@@ -140,6 +137,19 @@ async fn run() -> Result<()> {
         );
     }
     cmd.args(&args);
+    if is_help {
+        // Help is generated locally and contains no user or model content.
+        let output = cmd.output().context("无法读取命令帮助")?;
+        let brand = |bytes: &[u8]| {
+            String::from_utf8_lossy(bytes)
+                .replace("OpenAI Codex", "XJCode")
+                .replace("Codex", "XJCode")
+                .replace("codex", "xjcode")
+        };
+        print!("{}", brand(&output.stdout));
+        eprint!("{}", brand(&output.stderr));
+        std::process::exit(output.status.code().unwrap_or(1));
+    }
     // Preserve the user's terminal; this is the interactive engine, not a background shell.
     let status = cmd.status().context("无法启动 XJCode 编程引擎")?;
     std::process::exit(status.code().unwrap_or(1));

@@ -43,7 +43,8 @@ try {
     }
 } finally { Pop-Location }
 $artifactProfile = if ($Profile -eq 'dev') { 'debug' } else { 'release' }
-$package = Join-Path $repo "dist\xjcode-0.1.0-windows-x64-$Profile"
+$version = (Get-Content -Raw (Join-Path $repo "npm\xjcode\package.json") | ConvertFrom-Json).version
+$package = Join-Path $repo "dist\xjcode-$version-windows-x64-$Profile"
 New-Item -ItemType Directory -Force -Path $package | Out-Null
 Copy-Item -LiteralPath (Join-Path $engineTarget "$artifactProfile\codex.exe") -Destination (Join-Path $package 'xjcode-engine.exe') -Force
 foreach ($binary in @('codex-windows-sandbox-setup.exe', 'codex-command-runner.exe', 'codex-windows-managed-deny-probe.exe')) {

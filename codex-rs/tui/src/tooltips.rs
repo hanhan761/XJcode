@@ -47,6 +47,12 @@ lazy_static! {
 
 /// Pick a random tooltip to show to the user when starting Codex.
 pub(crate) fn get_tooltip(plan: Option<PlanType>, keymap: &TuiKeymap) -> Option<String> {
+    if crate::branding::is_xjcode() {
+        return Some(
+            "使用 **/model** 切换模型，**/resume** 恢复会话；退出后运行 `xjcode resume` 继续。"
+                .to_string(),
+        );
+    }
     let mut rng = rand::rng();
     preferred_tooltip(&mut rng, plan).or_else(|| pick_tooltip(&mut rng, keymap))
 }
@@ -179,7 +185,7 @@ pub(crate) mod announcement {
 
     /// Prewarm the cache of the announcement tip.
     pub(crate) fn prewarm(http_client_factory: HttpClientFactory) {
-        if ANNOUNCEMENT_TIP.get().is_some() {
+        if crate::branding::is_xjcode() || ANNOUNCEMENT_TIP.get().is_some() {
             return;
         }
         tokio::spawn(async move {

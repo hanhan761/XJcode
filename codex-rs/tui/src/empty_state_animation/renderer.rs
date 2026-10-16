@@ -8,6 +8,7 @@ use super::geometry::EXTENT;
 use super::geometry::FIELDS;
 use super::geometry::GRID;
 use super::geometry::STEP;
+use super::geometry::XJTU_FIELD;
 use super::lighting::Lighting;
 
 pub(super) const MAX_COLUMNS: u16 = 60;
@@ -59,6 +60,7 @@ impl Renderer {
         assert!(columns <= MAX_COLUMNS && rows <= MAX_ROWS);
         let columns = usize::from(columns);
         let rows = usize::from(rows);
+        let xjtu = crate::branding::is_xjcode();
         let phase = phase.rem_euclid(/*rhs*/ 1.0);
         let second = if phase >= 0.5 { 1.0 } else { 0.0 };
         let spin = smooth((phase * 2.0 - second) / 0.82);
@@ -68,22 +70,29 @@ impl Renderer {
         let (sx, cx) = (rotation.sin() * WOBBLE).sin_cos();
         let (sy, cy) = rotation.sin_cos();
         let (sz, cz) = ((phase * TAU).sin() * 0.045).sin_cos();
-        let bevel = 0.075 + blend * 0.012;
+        let bevel = if xjtu { 0.018 } else { 0.075 + blend * 0.012 };
+        let half_depth = if xjtu { 0.045 } else { HALF_DEPTH };
+        let scale = if xjtu { 248.0 } else { 206.0 };
         let dot_columns = columns * 2;
         let dot_rows = rows * 4;
         let dot_width = 800.0 / dot_columns as f64;
         let dot_height = 550.0 / dot_rows as f64;
         self.depth.fill(f32::NEG_INFINITY);
         for (i, value) in self.shape.iter_mut().enumerate() {
-            *value =
-                (f64::from(FIELDS[0][i]) * (1.0 - blend) + f64::from(FIELDS[1][i]) * blend) as f32;
+            *value = if xjtu {
+                XJTU_FIELD[i]
+            } else {
+                (f64::from(FIELDS[0][i]) * (1.0 - blend) + f64::from(FIELDS[1][i]) * blend) as f32
+            };
         }
         let mut project = |[x, y, mut z]: [f64; 3], [mut nx, mut ny, mut nz]: [f64; 3]| {
             let u = x * 2.2 + y * 0.7;
             let v = y * 2.8 - x * 0.4;
-            z += u.sin() * 0.075 + v.sin() * 0.04;
-            nx -= nz * (u.cos() * 0.165 - v.cos() * 0.016);
-            ny -= nz * (u.cos() * 0.0525 + v.cos() * 0.112);
+            if !xjtu {
+                z += u.sin() * 0.075 + v.sin() * 0.04;
+                nx -= nz * (u.cos() * 0.165 - v.cos() * 0.016);
+                ny -= nz * (u.cos() * 0.0525 + v.cos() * 0.112);
+            }
             let length = nx.hypot(ny).hypot(nz);
             let length = if length == 0.0 { 1.0 } else { length };
             nx /= length;
@@ -96,8 +105,8 @@ impl Renderer {
             let x3 = x1 * cz - y2 * sz;
             let y3 = x1 * sz + y2 * cz;
             let perspective = 4.4 / (4.4 - z2);
-            let column = ((400.0 + x3 * 206.0 * perspective) / dot_width).floor() as isize;
-            let row = ((275.0 + y3 * 206.0 * perspective) / dot_height).floor() as isize;
+            let column = ((400.0 + x3 * scale * perspective) / dot_width).floor() as isize;
+            let row = ((275.0 + y3 * scale * perspective) / dot_height).floor() as isize;
             if column < 0 || column >= dot_columns as isize || row < 0 || row >= dot_rows as isize {
                 return;
             }
@@ -134,12 +143,12 @@ impl Renderer {
                 if d > 0.0 {
                     let edge = (1.0 - d / bevel).clamp(/*min*/ 0.0, /*max*/ 1.0);
                     let nz = (1.0 - edge * edge).sqrt();
-                    let z = HALF_DEPTH - bevel + bevel * nz;
+                    let z = half_depth - bevel + bevel * nz;
                     project([x, y, z], [-gx * edge, -gy * edge, nz]);
                     project([x, y, -z], [-gx * edge, -gy * edge, -nz]);
                 }
                 if d.abs() < STEP * 0.8 {
-                    let side_depth = HALF_DEPTH - bevel;
+                    let side_depth = half_depth - bevel;
                     let layers = (side_depth * 2.0 / STEP).ceil() as usize;
                     for layer in 0..=layers {
                         project(

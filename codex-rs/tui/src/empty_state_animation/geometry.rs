@@ -107,6 +107,16 @@ fn field((path, bounds): (&str, [f64; 4])) -> Vec<f32> {
             inside[row * GRID + column] = winding != 0;
         }
     }
+    distance_field(&inside)
+}
+
+pub(super) static XJTU_FIELD: LazyLock<Vec<f32>> = LazyLock::new(|| {
+    let mask = include_bytes!("../../assets/xjtu/emblem.mask");
+    assert_eq!(mask.len(), GRID * GRID);
+    distance_field(&mask.iter().map(|value| *value != 0).collect::<Vec<_>>())
+});
+
+fn distance_field(inside: &[bool]) -> Vec<f32> {
     let mut distance = vec![GRID as f32; GRID * GRID];
     for row in 1..GRID - 1 {
         for column in 1..GRID - 1 {

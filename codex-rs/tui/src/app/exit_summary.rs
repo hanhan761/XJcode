@@ -32,7 +32,7 @@ impl App {
         let disconnect_info = thread_id.and_then(|_| {
             let command = match &self.app_server_target {
                 AppServerTarget::Embedded => return None,
-                AppServerTarget::LocalDaemon { .. } => vec!["codex".to_string()],
+                AppServerTarget::LocalDaemon { .. } => vec![crate::branding::command().to_string()],
                 AppServerTarget::Remote { endpoint } => {
                     let address = match endpoint {
                         RemoteAppServerEndpoint::WebSocket { websocket_url, .. } => {
@@ -49,7 +49,11 @@ impl App {
                             format!("unix://{}", socket_path.display())
                         }
                     };
-                    vec!["codex".to_string(), "--remote".to_string(), address]
+                    vec![
+                        crate::branding::command().to_string(),
+                        "--remote".to_string(),
+                        address,
+                    ]
                 }
             };
             let stop_hint = self
@@ -80,6 +84,10 @@ impl App {
 impl AppExitInfo {
     /// Format the terminal summary for both the CLI and standalone TUI binaries.
     pub fn format_exit_messages(self, color_enabled: bool) -> Vec<String> {
+        self.format_exit_messages_for_command(color_enabled, crate::branding::command())
+    }
+
+    fn format_exit_messages_for_command(self, color_enabled: bool, command: &str) -> Vec<String> {
         let color_command = |command: String| {
             if color_enabled {
                 format!("\u{1b}[36m{command}\u{1b}[39m")
@@ -138,12 +146,12 @@ impl AppExitInfo {
             lines.push("To continue this session, run:".to_string());
             lines.push(format!(
                 "  {}",
-                color_command(format!("codex resume {}", thread.thread_id)),
+                color_command(format!("{command} resume {}", thread.thread_id)),
             ));
             if let Some(thread_name) = thread.thread_name.filter(|name| !name.is_empty()) {
                 lines.push(format!(
                     "Or run {} and select {}.",
-                    color_command("codex resume".to_string()),
+                    color_command(format!("{command} resume")),
                     color_command(thread_name),
                 ));
             }
@@ -151,5 +159,34 @@ impl AppExitInfo {
             lines.push(format!("Session ID: {thread_id}"));
         }
         lines
+    }
+}
+
+#[cfg(test)]
+mod branding_tests {
+    use super::*;
+    #[test]
+    fn campus_resume_hint_uses_launcher_without_changing_thread_name() {
+        let id = ThreadId::from_string("123e4567-e89b-12d3-a456-426614174000").unwrap();
+        for color in [false, true] {
+            let exit = AppExitInfo {
+                token_usage: Default::default(),
+                thread_id: Some(id),
+                resume_hint: Some(ResumableThread {
+                    thread_id: id,
+                    thread_name: Some("codex source review".to_string()),
+                }),
+                disconnect_info: None,
+                update_action: None,
+                exit_reason: ExitReason::UserRequested,
+            };
+            let text = exit
+                .format_exit_messages_for_command(color, "xjcode")
+                .join("\n");
+            assert!(text.contains("xjcode resume 123e4567-e89b-12d3-a456-426614174000"));
+            assert!(text.contains("codex source review"));
+            assert!(!text.contains("  codex resume"));
+            assert!(!text.contains("Or run codex resume"));
+        }
     }
 }

@@ -11,3 +11,5 @@
 版本化 /releases/* 使用 Cache-Control: public, max-age=31536000, immutable；根网页和 install.ps1 不长期缓存。发布新二进制时使用新版本号，不覆盖已发布包。GitHub 保存源码，普通用户安装无需访问 GitHub 或 npm 官方仓库。
 
 禁止上传账号目录、.env、PEM、凭据、个人配置或构建日志。
+
+0.1.1 发布使用 scripts/deploy-xjcode-static.py：持共享锁等待上传完成标记，验证 ZIP 与逐文件摘要，保留 0.1.0 下载路径，分别切换包目录与教程 current。无需重载 Caddy。上传包由开发机生成，Node 归档在校验后复用已有不可变文件。

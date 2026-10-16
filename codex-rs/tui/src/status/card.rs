@@ -737,17 +737,21 @@ impl StatusHistoryCell {
         }
         let mut lines = Vec::new();
 
-        let account_value = self.account.as_ref().map(|account| match account {
-            StatusAccountDisplay::ChatGpt { email, plan } => match (email, plan) {
-                (Some(email), Some(plan)) => format!("{email} ({plan})"),
-                (Some(email), None) => email.clone(),
-                (None, Some(plan)) => plan.clone(),
-                (None, None) => "ChatGPT".to_string(),
-            },
-            StatusAccountDisplay::ApiKey => {
-                "API key configured (run codex login to use ChatGPT)".to_string()
-            }
-        });
+        let account_value = if crate::branding::is_xjcode() {
+            Some("交晓智 · 校园账号（xjcode login）".to_string())
+        } else {
+            self.account.as_ref().map(|account| match account {
+                StatusAccountDisplay::ChatGpt { email, plan } => match (email, plan) {
+                    (Some(email), Some(plan)) => format!("{email} ({plan})"),
+                    (Some(email), None) => email.clone(),
+                    (None, Some(plan)) => plan.clone(),
+                    (None, None) => "ChatGPT".to_string(),
+                },
+                StatusAccountDisplay::ApiKey => {
+                    "API key configured (run codex login to use ChatGPT)".to_string()
+                }
+            })
+        };
 
         let mut labels: Vec<String> = vec!["Model", "Directory", "Permissions", "Agents.md"]
             .into_iter()

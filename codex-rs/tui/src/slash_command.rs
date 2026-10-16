@@ -91,6 +91,17 @@ pub enum SlashCommand {
 impl SlashCommand {
     /// User-visible description shown in the popup.
     pub fn description(self) -> &'static str {
+        if crate::branding::is_xjcode() {
+            match self {
+                Self::Config => return "配置 XJCode 偏好",
+                Self::Init => return "为项目创建 AGENTS.md 编程指引",
+                Self::Quit | Self::Exit => return "退出 XJCode",
+                Self::Skills => return "查看和使用编程技能",
+                Self::Permissions => return "设置 XJCode 的操作权限",
+                Self::Logout => return "查看校园账号退出方法",
+                _ => {}
+            }
+        }
         match self {
             SlashCommand::Config => "configure Codex preferences",
             SlashCommand::Feedback => "send logs to maintainers",

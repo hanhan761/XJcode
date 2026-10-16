@@ -15,7 +15,7 @@ irm https://xjcode.wenshanzhike.com/install.ps1 | iex
 已有 Node.js 22+：
 
 ```powershell
-npm install -g https://xjcode.wenshanzhike.com/releases/0.1.0/xjcode-0.1.0.tgz
+npm install -g https://xjcode.wenshanzhike.com/releases/0.1.1/xjcode-0.1.1.tgz
 ```
 
 也可以从网站下载单文件安装器，双击安装。下载由国内自有服务器提供，无需通过 GitHub 或 npm 官方仓库。支持 Windows x64，校园登录需要 WebView2 和有效校园账号。

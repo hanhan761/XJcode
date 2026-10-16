@@ -493,7 +493,14 @@ impl ChatWidget {
                 self.request_quit_without_confirmation();
             }
             SlashCommand::Logout => {
-                self.app_event_tx.send(AppEvent::Logout);
+                if crate::branding::is_xjcode() {
+                    self.add_info_message(
+                        "请先用 /quit 退出，再运行 xjcode logout 清除校园登录凭据。".to_string(),
+                        None,
+                    );
+                } else {
+                    self.app_event_tx.send(AppEvent::Logout);
+                }
             }
             SlashCommand::Copy => {
                 self.show_copy_picker();
