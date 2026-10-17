@@ -4,6 +4,10 @@
 
 面向 Windows PowerShell 的交晓智编程工具。使用校园账号登录，在项目里理解代码、修改文件并运行测试。
 
+<p align="center">
+  <img src="docs/xjcode/xjcode-hero-apple-style.png" alt="XJCode 项目介绍图" width="100%" />
+</p>
+
 [官方网站与一键安装](https://xjcode.wenshanzhike.com/) · [使用文档](README-XJCODE.md) · [安装说明](INSTALLATION.md)
 
 ## 安装
