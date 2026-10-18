@@ -21,7 +21,7 @@ jobs:
         run: jq '.issue | {title, body}' "$GITHUB_EVENT_PATH" > codex-current-issue.json
 
       - id: codex
-        uses: openai/codex-action@5c3f4ccdb2b8790f73d6b21751ac00e602aa0c02 # v1.7
+        uses: openai/codex-action@bdf19a4a223ec2549a3e2274a0cf61556bc07675 # v1.13
         with:
           openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
           allow-users: "*"
