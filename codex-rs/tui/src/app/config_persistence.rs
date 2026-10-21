@@ -32,6 +32,10 @@ pub(super) fn resume_model_settings_for_overrides(
     config: &Config,
     harness_overrides: &ConfigOverrides,
 ) -> crate::app_server_session::ResumeModelSettings {
+    if crate::branding::is_xjcode() {
+        // A historical thread must not restore an out-of-catalog model.
+        return crate::app_server_session::ResumeModelSettings::OverrideFromCurrentConfig;
+    }
     let has_layer_override = config.config_layer_stack.layers_high_to_low().any(|layer| {
         matches!(
             &layer.name,
@@ -73,6 +77,18 @@ pub(super) fn has_explicit_resume_permission_override(
 }
 
 impl App {
+    pub(super) fn reject_model_outside_catalog(&mut self, model: &str) -> bool {
+        if !crate::branding::is_xjcode()
+            || self.config.model_catalog.as_ref().is_some_and(|catalog| catalog.models.iter().any(|item| item.slug == model))
+        {
+            return false;
+        }
+        self.chat_widget.add_error_message(
+            "只能切换到交晓智授权目录中的模型，请使用 /model 选择。".to_string(),
+        );
+        true
+    }
+
     pub(super) fn resume_permission_overrides(
         &self,
         config: &Config,

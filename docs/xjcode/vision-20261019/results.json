@@ -1,0 +1,598 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-19",
+  "baseline_commit": "a01cee81a4207d275940cae0125c49b0eb6ce9df",
+  "started_at_utc": "2026-10-19T02:06:44.937746+00:00",
+  "matrix_updated_at_utc": "2026-10-19T02:11:09.410742900+00:00",
+  "method": "random-code-only-in-pixels; two independent fixtures required; no retries; no tools",
+  "summary": {
+    "authorized_models": 24,
+    "tested_models": 24,
+    "confirmed_image_models": 7,
+    "image_not_recognized": 5,
+    "image_errors": 12,
+    "image_and_text_errors": 10,
+    "image_error_text_responded": 2,
+    "client_passed": 7
+  },
+  "fixtures": [
+    {
+      "file": "fixture-1.png",
+      "code": "M3USQEMD",
+      "sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915"
+    },
+    {
+      "file": "fixture-2.png",
+      "code": "4ZXQG2PC",
+      "sha256": "410fc3a6b77e0176335f82ba17fd7d9a04eb4fb6f551c08f86fba4046af38f60"
+    },
+    {
+      "file": "fixture-3.png",
+      "code": "8PLHA9FY",
+      "sha256": "f14ea89d91e449fa4e0c8ee2f5c23f3697f98bb71dfa7c5b806f768a11eb57cc"
+    }
+  ],
+  "full_client_build": {
+    "engineSha256": "8a5a8ae7d66e8491d973f2da504258f4ae5d7f314452eb72adc56dac6bea5e45",
+    "launcherSha256": "b040d5377b9e25b4e72ecf0a8864b6d09ad6fcc79518838f74760610aad3d978"
+  },
+  "models": [
+    {
+      "model": "DeepSeek-V3-2",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "未收到图片，无法识别代码和描述图形。",
+          "round": 1,
+          "seconds": 1.6192027,
+          "status": "not_recognized"
+        }
+      ],
+      "client": null
+    },
+    {
+      "model": "Doubao-Seed-2.0-pro",
+      "platform_declared_vision": false,
+      "confirmed_image_input": true,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "M3USQEMD\n左侧是橙色的三角形，右侧是紫色的圆形。",
+          "round": 1,
+          "seconds": 8.0912797,
+          "status": "recognized"
+        },
+        {
+          "fixture_sha256": "410fc3a6b77e0176335f82ba17fd7d9a04eb4fb6f551c08f86fba4046af38f60",
+          "reply": "4ZXQG2PC\n左侧是蓝色的正方形，右侧是红色的正三角形。",
+          "round": 2,
+          "seconds": 5.2958098,
+          "status": "recognized"
+        }
+      ],
+      "client": {
+        "model": "Doubao-Seed-2.0-pro",
+        "exit_code": 0,
+        "seconds": 42.94,
+        "tools": 0,
+        "passed": true,
+        "reply": "黑色8位字母数字代码：8PLHA9FY\n左侧图形：橙色的等边三角形\n右侧图形：紫色的圆形",
+        "fixture_sha256": "f14ea89d91e449fa4e0c8ee2f5c23f3697f98bb71dfa7c5b806f768a11eb57cc"
+      }
+    },
+    {
+      "model": "Doubao-pro-32k",
+      "platform_declared_vision": false,
+      "confirmed_image_input": true,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "M3USQEMD\n左侧是橙色的等边三角形，右侧是紫色的圆形。",
+          "round": 1,
+          "seconds": 2.3399269,
+          "status": "recognized"
+        },
+        {
+          "fixture_sha256": "410fc3a6b77e0176335f82ba17fd7d9a04eb4fb6f551c08f86fba4046af38f60",
+          "reply": "4ZXQG2PC\n左侧图形是蓝色的正方形，右侧图形是红色的等边三角形。",
+          "round": 2,
+          "seconds": 5.3626511,
+          "status": "recognized"
+        }
+      ],
+      "client": {
+        "model": "Doubao-pro-32k",
+        "exit_code": 0,
+        "seconds": 3.85,
+        "tools": 0,
+        "passed": true,
+        "reply": "黑色8位字母数字代码：8PLHA9FY\n左侧图形：橙色的等边三角形，整体为实心橙色。\n右侧图形：紫色的正圆形，整体为实心紫色。",
+        "fixture_sha256": "f14ea89d91e449fa4e0c8ee2f5c23f3697f98bb71dfa7c5b806f768a11eb57cc"
+      }
+    },
+    {
+      "model": "GLM-4-Air",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 0.762668,
+          "status": "service_error",
+          "http_status": 500,
+          "upstream_code": "InternalError.Error",
+          "kind": "http"
+        }
+      ],
+      "text_control": {
+        "seconds": 0.4491537,
+        "status": "service_error",
+        "http_status": 500,
+        "upstream_code": "InternalError.Error",
+        "kind": "http"
+      },
+      "client": null
+    },
+    {
+      "model": "GLM-4-Long",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 0.4782781,
+          "status": "service_error",
+          "http_status": 500,
+          "upstream_code": "InternalError.Error",
+          "kind": "http"
+        }
+      ],
+      "text_control": {
+        "seconds": 0.2924302,
+        "status": "service_error",
+        "http_status": 500,
+        "upstream_code": "InternalError.Error",
+        "kind": "http"
+      },
+      "client": null
+    },
+    {
+      "model": "GLM-4-Plus",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 4.2428214,
+          "status": "service_error",
+          "http_status": 500,
+          "upstream_code": "InternalError.Error",
+          "kind": "http"
+        }
+      ],
+      "text_control": {
+        "seconds": 0.2883013,
+        "status": "service_error",
+        "http_status": 500,
+        "upstream_code": "InternalError.Error",
+        "kind": "http"
+      },
+      "client": null
+    },
+    {
+      "model": "GLM-4.7",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 0.5021092,
+          "status": "service_error",
+          "http_status": 500,
+          "upstream_code": "InternalError.Error",
+          "kind": "http"
+        }
+      ],
+      "text_control": {
+        "seconds": 0.392234,
+        "status": "service_error",
+        "http_status": 500,
+        "upstream_code": "InternalError.Error",
+        "kind": "http"
+      },
+      "client": null
+    },
+    {
+      "model": "GLM-5.2",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "未收到图片。",
+          "round": 1,
+          "seconds": 5.3787028,
+          "status": "not_recognized"
+        }
+      ],
+      "client": null
+    },
+    {
+      "model": "doubao-seed-2.0-lite",
+      "platform_declared_vision": false,
+      "confirmed_image_input": true,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "M3USQEMD\n左侧是橙色的实心正三角形，右侧是紫色的实心圆形。",
+          "round": 1,
+          "seconds": 6.0785735,
+          "status": "recognized"
+        },
+        {
+          "fixture_sha256": "410fc3a6b77e0176335f82ba17fd7d9a04eb4fb6f551c08f86fba4046af38f60",
+          "reply": "4ZXQG2PC\n左侧是蓝色的实心正方形，右侧是红色的实心正三角形。",
+          "round": 2,
+          "seconds": 5.9938001,
+          "status": "recognized"
+        }
+      ],
+      "client": {
+        "model": "doubao-seed-2.0-lite",
+        "exit_code": 0,
+        "seconds": 5.15,
+        "tools": 0,
+        "passed": true,
+        "reply": "黑色8位字母数字代码：8PLHA9FY\n左侧图形：橙色的实心等边三角形\n右侧图形：紫色的实心正圆形",
+        "fixture_sha256": "f14ea89d91e449fa4e0c8ee2f5c23f3697f98bb71dfa7c5b806f768a11eb57cc"
+      }
+    },
+    {
+      "model": "moonshot-v1-128k",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 0.853782,
+          "status": "service_error",
+          "http_status": 500,
+          "upstream_code": "InternalError.Error",
+          "kind": "http"
+        }
+      ],
+      "text_control": {
+        "seconds": 0.3977775,
+        "status": "service_error",
+        "http_status": 500,
+        "upstream_code": "InternalError.Error",
+        "kind": "http"
+      },
+      "client": null
+    },
+    {
+      "model": "moonshot-v1-32k",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 0.4965348,
+          "status": "service_error",
+          "http_status": 500,
+          "upstream_code": "InternalError.Error",
+          "kind": "http"
+        }
+      ],
+      "text_control": {
+        "seconds": 0.4966193,
+        "status": "service_error",
+        "http_status": 500,
+        "upstream_code": "InternalError.Error",
+        "kind": "http"
+      },
+      "client": null
+    },
+    {
+      "model": "moonshot-v1-8k",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 0.4269472,
+          "status": "service_error",
+          "http_status": 500,
+          "upstream_code": "InternalError.Error",
+          "kind": "http"
+        }
+      ],
+      "text_control": {
+        "seconds": 0.261767,
+        "status": "service_error",
+        "http_status": 500,
+        "upstream_code": "InternalError.Error",
+        "kind": "http"
+      },
+      "client": null
+    },
+    {
+      "model": "qwen-long",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 0.8547687,
+          "status": "service_error",
+          "http_status": 200,
+          "upstream_code": null,
+          "kind": "stream_empty"
+        }
+      ],
+      "text_control": {
+        "reply": "XJCODE_TEXT_CONTROL_OK",
+        "seconds": 0.8680129,
+        "status": "responded"
+      },
+      "client": null
+    },
+    {
+      "model": "qwen-max",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "未收到图片，请上传图片以便我进行观察和描述。",
+          "round": 1,
+          "seconds": 1.185072,
+          "status": "not_recognized"
+        }
+      ],
+      "client": null
+    },
+    {
+      "model": "qwen-plus",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "未收到",
+          "round": 1,
+          "seconds": 0.7557742,
+          "status": "not_recognized"
+        }
+      ],
+      "client": null
+    },
+    {
+      "model": "qwen-plus-latest",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "未收到",
+          "round": 1,
+          "seconds": 0.9917025,
+          "status": "not_recognized"
+        }
+      ],
+      "client": null
+    },
+    {
+      "model": "qwen-turbo",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 0.5560451,
+          "status": "service_error",
+          "http_status": 500,
+          "upstream_code": "InternalError.Error",
+          "kind": "http"
+        }
+      ],
+      "text_control": {
+        "seconds": 0.3116079,
+        "status": "service_error",
+        "http_status": 500,
+        "upstream_code": "InternalError.Error",
+        "kind": "http"
+      },
+      "client": null
+    },
+    {
+      "model": "qwen3-coder-plus",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 0.7695718,
+          "status": "service_error",
+          "http_status": 500,
+          "upstream_code": "InternalError.Error",
+          "kind": "http"
+        }
+      ],
+      "text_control": {
+        "seconds": 0.2312474,
+        "status": "service_error",
+        "http_status": 500,
+        "upstream_code": "InternalError.Error",
+        "kind": "http"
+      },
+      "client": null
+    },
+    {
+      "model": "qwen3-max",
+      "platform_declared_vision": true,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 0.4165186,
+          "status": "service_error",
+          "http_status": 500,
+          "upstream_code": "InternalError.Error",
+          "kind": "http"
+        }
+      ],
+      "text_control": {
+        "seconds": 0.21985,
+        "status": "service_error",
+        "http_status": 500,
+        "upstream_code": "InternalError.Error",
+        "kind": "http"
+      },
+      "client": null
+    },
+    {
+      "model": "qwen3-vl-plus",
+      "platform_declared_vision": true,
+      "confirmed_image_input": true,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "M3USQEMD\n左侧是橙色的三角形，右侧是紫色的圆形。",
+          "round": 1,
+          "seconds": 1.7921603,
+          "status": "recognized"
+        },
+        {
+          "fixture_sha256": "410fc3a6b77e0176335f82ba17fd7d9a04eb4fb6f551c08f86fba4046af38f60",
+          "reply": "4ZXQG2PC\n左侧是蓝色正方形，右侧是红色三角形。",
+          "round": 2,
+          "seconds": 1.9585559,
+          "status": "recognized"
+        }
+      ],
+      "client": {
+        "model": "qwen3-vl-plus",
+        "exit_code": 0,
+        "seconds": 4.32,
+        "tools": 0,
+        "passed": true,
+        "reply": "8PLHA9FY\n左侧是橙色三角形，右侧是紫色圆形",
+        "fixture_sha256": "f14ea89d91e449fa4e0c8ee2f5c23f3697f98bb71dfa7c5b806f768a11eb57cc"
+      }
+    },
+    {
+      "model": "qwen3.6-flash",
+      "platform_declared_vision": false,
+      "confirmed_image_input": true,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "M3USQEMD\n左边是一个橙色的三角形，右边是一个紫色的圆形。",
+          "round": 1,
+          "seconds": 10.2070028,
+          "status": "recognized"
+        },
+        {
+          "fixture_sha256": "410fc3a6b77e0176335f82ba17fd7d9a04eb4fb6f551c08f86fba4046af38f60",
+          "reply": "4ZXQG2PC\n左边是一个蓝色的正方形，右边是一个红色的三角形。",
+          "round": 2,
+          "seconds": 4.165747,
+          "status": "recognized"
+        }
+      ],
+      "client": {
+        "model": "qwen3.6-flash",
+        "exit_code": 0,
+        "seconds": 7.78,
+        "tools": 0,
+        "passed": true,
+        "reply": "黑色8位字母数字代码是：**8PLHA9FY**\n\n左右图形描述如下：\n*   **左侧**：一个橙色的三角形。\n*   **右侧**：一个紫色的圆形。",
+        "fixture_sha256": "f14ea89d91e449fa4e0c8ee2f5c23f3697f98bb71dfa7c5b806f768a11eb57cc"
+      }
+    },
+    {
+      "model": "qwen3.7-max",
+      "platform_declared_vision": false,
+      "confirmed_image_input": false,
+      "rounds": [
+        {
+          "round": 1,
+          "seconds": 1.2380361,
+          "status": "service_error",
+          "http_status": 500,
+          "upstream_code": "InternalError.Error",
+          "kind": "http"
+        }
+      ],
+      "text_control": {
+        "reply": "XJCODE_TEXT_CONTROL_OK",
+        "seconds": 3.0890027,
+        "status": "responded"
+      },
+      "client": null
+    },
+    {
+      "model": "qwen3.7-plus",
+      "platform_declared_vision": false,
+      "confirmed_image_input": true,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "M3USQEMD\n左边是一个橙色的三角形，右边是一个紫色的圆形。",
+          "round": 1,
+          "seconds": 1.4202679,
+          "status": "recognized"
+        },
+        {
+          "fixture_sha256": "410fc3a6b77e0176335f82ba17fd7d9a04eb4fb6f551c08f86fba4046af38f60",
+          "reply": "4ZXQG2PC\n左边是一个蓝色的正方形，右边是一个红色的三角形。",
+          "round": 2,
+          "seconds": 1.482747,
+          "status": "recognized"
+        }
+      ],
+      "client": {
+        "model": "qwen3.7-plus",
+        "exit_code": 0,
+        "seconds": 2.62,
+        "tools": 0,
+        "passed": true,
+        "reply": "黑色8位字母数字代码：8PLHA9FY\n\n左侧图形：橙色三角形\n右侧图形：紫色圆形",
+        "fixture_sha256": "f14ea89d91e449fa4e0c8ee2f5c23f3697f98bb71dfa7c5b806f768a11eb57cc"
+      }
+    },
+    {
+      "model": "qwen3.8-max",
+      "platform_declared_vision": false,
+      "confirmed_image_input": true,
+      "rounds": [
+        {
+          "fixture_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+          "reply": "M3USQEMD\n左边是一个橙色的三角形，右边是一个紫色的圆形。",
+          "round": 1,
+          "seconds": 2.073298,
+          "status": "recognized"
+        },
+        {
+          "fixture_sha256": "410fc3a6b77e0176335f82ba17fd7d9a04eb4fb6f551c08f86fba4046af38f60",
+          "reply": "4ZXQG2PC\n左边是一个蓝色的正方形，右边是一个红色的三角形。",
+          "round": 2,
+          "seconds": 2.1485915,
+          "status": "recognized"
+        }
+      ],
+      "client": {
+        "model": "qwen3.8-max",
+        "exit_code": 0,
+        "seconds": 3.83,
+        "tools": 0,
+        "passed": true,
+        "reply": "黑色8位字母数字代码：8PLHA9FY\n\n左侧图形为橙色三角形，右侧图形为紫色圆形。",
+        "fixture_sha256": "f14ea89d91e449fa4e0c8ee2f5c23f3697f98bb71dfa7c5b806f768a11eb57cc"
+      }
+    }
+  ]
+}

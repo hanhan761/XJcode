@@ -1003,6 +1003,29 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
         }
     };
 
+    // Do not let normalization silently replace newly supplied image inputs
+    // with unsupported-media text for a campus text-only model.
+    if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some()
+        && config.model_provider_id == "xjtu"
+        && let InitialOperation::UserTurn { items, .. } = &initial_operation
+        && items
+            .iter()
+            .any(|item| matches!(item, UserInput::LocalImage { .. } | UserInput::Image { .. }))
+    {
+        let supports_images = config.model_catalog.as_ref().is_some_and(|catalog| {
+            catalog.models.iter().any(|model| {
+                Some(model.slug.as_str()) == config.model.as_deref()
+                    && model
+                        .input_modalities
+                        .contains(&codex_protocol::openai_models::InputModality::Image)
+            })
+        });
+        anyhow::ensure!(
+            supports_images,
+            "当前交晓智模型未标记为支持图片；请用 -m 选择支持图片的授权模型。图片未发送。可运行 xjcode models --refresh 更新能力目录。"
+        );
+    }
+
     // When --yolo (dangerously_bypass_approvals_and_sandbox) is set, also skip the git repo check
     // since the user is explicitly running in an externally sandboxed environment.
     if !skip_git_repo_check

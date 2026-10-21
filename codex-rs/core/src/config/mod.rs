@@ -3947,14 +3947,32 @@ impl Config {
             .clone()
             .filter(|value| !value.is_empty());
 
-        let model_providers =
+        let xjcode_mode = std::env::var_os("XJCODE_PROVIDER_LOCK").is_some();
+        let model_providers = if xjcode_mode {
+            // The campus application has one transport. Do not expose bundled
+            // providers or let project/CLI configuration replace that transport.
+            let provider = serde_json::from_value(serde_json::json!({
+                "name": "交晓智", "wire_api": "xjtu_top",
+                "base_url": xjcode_native::api::ENDPOINT,
+                "requires_openai_auth": false,
+                "request_max_retries": 0, "stream_max_retries": 0
+            })).map_err(std::io::Error::other)?;
+            HashMap::from([("xjtu".to_string(), provider)])
+        } else {
             merge_configured_model_providers(built_in_model_providers(openai_base_url), cfg.model_providers)
-                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?;
+                .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?
+        };
 
         let model_provider_id = config_layer_stack.required_model_provider().map(str::to_string)
             .or(model_provider)
             .or(cfg.model_provider)
-            .unwrap_or_else(|| "openai".to_string());
+            .unwrap_or_else(|| if xjcode_mode { "xjtu" } else { "openai" }.to_string());
+        if xjcode_mode && model_provider_id != "xjtu" {
+            return Err(std::io::Error::new(
+                ErrorKind::InvalidInput,
+                "XJCode 只支持交晓智平台，不能切换到其他模型服务。",
+            ));
+        }
         let model_provider = model_providers
             .get(&model_provider_id)
             .ok_or_else(|| {
@@ -4218,7 +4236,32 @@ impl Config {
         let review_model = override_review_model.or(cfg.review_model);
 
         let check_for_update_on_startup = cfg.check_for_update_on_startup.unwrap_or(true);
-        let model_catalog = load_model_catalog(cfg.model_catalog_json.clone())?;
+        let (model, model_catalog) = if xjcode_mode {
+            // Only the catalog synchronized from XJTU is authoritative. Ignore
+            // alternate catalog files rather than merging with bundled models.
+            let home = xjcode_native::auth::home().map_err(std::io::Error::other)?;
+            let settings = xjcode_native::setup::load(&home).map_err(std::io::Error::other)?;
+            let authorized = |name: &str| settings.models.iter().any(|item| item.name == name);
+            if settings.models.is_empty() || !authorized(&settings.model) {
+                return Err(std::io::Error::new(
+                    ErrorKind::InvalidInput,
+                    "交晓智授权模型目录不可用，请运行 xjcode login 重新配置。",
+                ));
+            }
+            for selected in [model.as_deref(), review_model.as_deref(), agent_default_subagent_model.as_deref()].into_iter().flatten() {
+                if !authorized(selected) {
+                    return Err(std::io::Error::new(
+                        ErrorKind::InvalidInput,
+                        "所选模型不在交晓智授权目录，请运行 xjcode models 查看可选模型。",
+                    ));
+                }
+            }
+            let catalog = serde_json::from_value(xjcode_native::setup::catalog(&settings))
+                .map_err(std::io::Error::other)?;
+            (model.or(Some(settings.model)), Some(catalog))
+        } else {
+            (model, load_model_catalog(cfg.model_catalog_json.clone())?)
+        };
 
         let log_dir = cfg
             .log_dir

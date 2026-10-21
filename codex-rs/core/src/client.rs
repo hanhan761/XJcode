@@ -2373,10 +2373,12 @@ impl ModelClientSession {
     ) -> Result<ResponseStream> {
         let wire_api = self.client.state.provider.info().wire_api;
         if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() && wire_api != WireApi::XjtuTop {
-            return Err(CodexErr::InvalidRequest("XJCode only supports the XJTU provider; no fallback is permitted".into()));
+            return Err(CodexErr::InvalidRequest(
+                "XJCode only supports the XJTU provider; no fallback is permitted".into(),
+            ));
         }
         match wire_api {
-            WireApi::XjtuTop => crate::xjtu::stream(prompt, model_info).await,
+            WireApi::XjtuTop => crate::xjtu::stream(prompt, model_info, responses_metadata).await,
             WireApi::Responses => {
                 if self.client.responses_websocket_enabled() {
                     let request_trace = current_span_w3c_trace_context();

@@ -2117,6 +2117,9 @@ impl App {
                     .await;
             }
             AppEvent::UpdateModel(model) => {
+                if self.reject_model_outside_catalog(&model) {
+                    return Ok(AppRunControl::Continue);
+                }
                 if self
                     .active_thread_model_setting_update_params(model.clone())
                     .is_some_and(|params| params.permissions.is_some())
@@ -2297,12 +2300,21 @@ impl App {
                 }
             }
             AppEvent::OpenReasoningPopup { model } => {
+                if self.reject_model_outside_catalog(&model.model) {
+                    return Ok(AppRunControl::Continue);
+                }
                 self.chat_widget.open_reasoning_popup(model);
             }
             AppEvent::OpenAdvancedReasoningPopup { model } => {
+                if self.reject_model_outside_catalog(&model.model) {
+                    return Ok(AppRunControl::Continue);
+                }
                 self.chat_widget.open_advanced_reasoning_popup(model);
             }
             AppEvent::ApplyAdvancedReasoning { model, effort } => {
+                if self.reject_model_outside_catalog(&model) {
+                    return Ok(AppRunControl::Continue);
+                }
                 self.app_event_tx.send(AppEvent::FollowTranscript);
                 if self
                     .active_thread_model_setting_update_params(model.clone())
@@ -2355,6 +2367,9 @@ impl App {
                 }
             }
             AppEvent::OpenPlanReasoningScopePrompt { model, effort } => {
+                if self.reject_model_outside_catalog(&model) {
+                    return Ok(AppRunControl::Continue);
+                }
                 self.chat_widget
                     .open_plan_reasoning_scope_prompt(model, effort);
             }
@@ -2558,6 +2573,9 @@ impl App {
                 }
             }
             AppEvent::PersistModelSelection { model, effort } => {
+                if self.reject_model_outside_catalog(&model) {
+                    return Ok(AppRunControl::Continue);
+                }
                 self.app_event_tx.send(AppEvent::FollowTranscript);
                 match self.persist_model_defaults(
                     app_server.request_handle(),
@@ -2597,6 +2615,9 @@ impl App {
                 self.persist_daybreak_selection(app_server, thread_id, enabled).await;
             }
             AppEvent::SelectSessionModel { model, effort, service_tier } => {
+                if self.reject_model_outside_catalog(&model) {
+                    return Ok(AppRunControl::Continue);
+                }
                 self.app_event_tx.send(AppEvent::FollowTranscript);
                 self.select_session_model(app_server, model, effort, service_tier).await;
             }

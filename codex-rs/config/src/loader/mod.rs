@@ -82,6 +82,17 @@ const SYSTEM_CONFIG_TOML_FILE_UNIX: &str = "/etc/codex/config.toml";
 #[cfg(windows)]
 const DEFAULT_PROGRAM_DATA_DIR_WINDOWS: &str = r"C:\ProgramData";
 
+fn project_config_directory_name() -> &'static str {
+    // XJCode has a separate user home. Looking for .codex below the working
+    // directory can otherwise reload Codex's user config as a project override
+    // when launched from USERPROFILE, replacing the authorized XJTU model.
+    if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+        ".xjcode"
+    } else {
+        ".codex"
+    }
+}
+
 // Project-local config comes from repository contents, so it should not get to
 // choose where a user's credentials are sent or which local commands are run.
 // These settings are still supported from user, system, managed, and runtime
@@ -133,6 +144,8 @@ async fn first_layer_config_error_from_entries(layers: &[ConfigLayerEntry]) -> O
 /// - tree      parent directories up to root looking for `./.codex/config.toml` (loaded but disabled when untrusted)
 /// - repo      `$(git rev-parse --show-toplevel)/.codex/config.toml` (loaded but disabled when untrusted)
 /// - runtime   e.g., --config flags, model selector in UI
+///
+/// XJCode uses `.xjcode` for project-local folders while its provider lock is set.
 ///
 /// (*) Only available on macOS via managed device profiles.
 ///
@@ -1139,7 +1152,7 @@ impl ProjectTrustContext {
         }
 
         let relative_dir = dir.as_path().strip_prefix(checkout_root.as_path()).ok()?;
-        Some(repo_root.join(relative_dir).join(".codex"))
+        Some(repo_root.join(relative_dir).join(project_config_directory_name()))
     }
 }
 
@@ -1703,7 +1716,7 @@ async fn discover_project_layers(
     let mut layers = Vec::new();
     let mut startup_warnings = Vec::new();
     for dir in dirs {
-        let dot_codex_abs = dir.join(".codex");
+        let dot_codex_abs = dir.join(project_config_directory_name());
         let dot_codex_uri = PathUri::from_abs_path(&dot_codex_abs);
         if !fs
             .get_metadata(&dot_codex_uri, Default::default(), /*sandbox*/ None)
