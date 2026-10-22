@@ -333,9 +333,13 @@ impl ChatWidget {
     /// warning event so users can switch models or remove attachments.
     pub(crate) fn attach_image(&mut self, path: PathBuf) {
         if !self.current_model_supports_images() {
-            self.add_to_history(history_cell::new_warning_event(
-                self.image_inputs_not_supported_message(),
-            ));
+            let message = self.image_inputs_not_supported_message();
+            let warning = if self.config.model_provider_id == "xjtu" {
+                history_cell::new_usage_warning_event(message)
+            } else {
+                history_cell::new_warning_event(message)
+            };
+            self.add_to_history(warning);
             self.request_redraw();
             return;
         }
@@ -543,6 +547,20 @@ impl ChatWidget {
     pub(crate) fn handle_paste(&mut self, text: String) {
         self.cancel_quick_dial_menu();
         if self.external_writer_view && !self.bottom_pane.has_active_view() {
+            return;
+        }
+        // XJCode must not silently turn a dragged image into a text pathname
+        // when the selected campus model cannot receive image attachments.
+        if self.config.model_provider_id == "xjtu"
+            && !self.bottom_pane.has_active_view()
+            && !self.current_model_supports_images()
+            && crate::clipboard_paste::normalize_pasted_path(&text)
+                .is_some_and(|path| image::image_dimensions(path).is_ok())
+        {
+            self.add_to_history(history_cell::new_usage_warning_event(
+                self.image_inputs_not_supported_message(),
+            ));
+            self.request_redraw();
             return;
         }
         if !self.startup_submission_has_protected_input() {

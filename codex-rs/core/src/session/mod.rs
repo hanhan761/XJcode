@@ -747,6 +747,16 @@ impl Session {
                 config.http_client_factory(),
             )
             .await;
+        if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some()
+            && !config
+                .model_catalog
+                .as_ref()
+                .is_some_and(|catalog| catalog.models.iter().any(|item| item.slug == model))
+        {
+            return Err(CodexErr::InvalidRequest(
+                "所选模型不在交晓智授权目录，请从交晓智模型列表重新选择。".to_string(),
+            ));
+        }
         if model.trim().is_empty() {
             return Err(CodexErr::InvalidRequest(
                 "No models are available. Set `model` explicitly or check your model catalog configuration.".to_string(),
@@ -5077,6 +5087,21 @@ impl Session {
         token_usage: Option<&TokenUsage>,
         context: TokenUsageContext,
     ) -> CodexResult<()> {
+        if token_usage.is_none()
+            && matches!(context, TokenUsageContext::Sampling)
+            && turn_context.provider.info().wire_api == codex_model_provider_info::WireApi::XjtuTop
+        {
+            // Sampling and compaction both use this entry point. TOP does not
+            // report usage: estimate context without inventing provider billing.
+            self.recompute_token_usage(turn_context).await;
+            let estimated_context_tokens = self.get_total_token_usage().await;
+            tracing::debug!(
+                target: "xjcode_context_usage",
+                estimated_context_tokens,
+                "local TOP context estimate refreshed"
+            );
+            return Ok(());
+        }
         if let Some(token_usage) = token_usage {
             let token_info = {
                 let mut state = self.state.lock().await;

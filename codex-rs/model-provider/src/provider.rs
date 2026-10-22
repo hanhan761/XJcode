@@ -396,6 +396,11 @@ impl ConfiguredModelProvider {
                 model_catalog,
             ));
         }
+        if self.info.wire_api == codex_model_provider_info::WireApi::XjtuTop {
+            // An unavailable campus catalog must stay empty. Never substitute
+            // bundled models, an unrelated cache, or another models endpoint.
+            return Arc::new(StaticModelsManager::new(None, ModelsResponse::default()));
+        }
         let endpoint = Arc::new(OpenAiModelsEndpoint::new(
             self.info.clone(),
             self.auth_manager.clone(),

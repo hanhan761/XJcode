@@ -356,8 +356,8 @@ impl ChatWidget {
 
     /// Return whether the effective model currently advertises image-input support.
     ///
-    /// We intentionally default to `true` when model metadata cannot be read so transient catalog
-    /// failures do not hard-block user input in the UI.
+    /// Other providers retain their permissive fallback when metadata is unavailable.
+    /// XJCode requires an explicit campus vision capability before accepting images.
     pub(super) fn current_model_supports_images(&self) -> bool {
         let model = self.current_model();
         self.model_catalog
@@ -369,7 +369,7 @@ impl ChatWidget {
                     .find(|preset| preset.model == model)
                     .map(|preset| preset.input_modalities.contains(&InputModality::Image))
             })
-            .unwrap_or(true)
+            .unwrap_or(self.config.model_provider_id != "xjtu")
     }
 
     pub(super) fn sync_image_paste_enabled(&mut self) {
@@ -378,6 +378,12 @@ impl ChatWidget {
     }
 
     pub(super) fn image_inputs_not_supported_message(&self) -> String {
+        if self.config.model_provider_id == "xjtu" {
+            return format!(
+                "当前交晓智模型 {} 未标记为支持图片。请用 /model 选择支持图片的交晓智授权模型；若刚更新能力目录，请退出后重新进入。图片未发送。",
+                self.current_model()
+            );
+        }
         format!(
             "Model {} does not support image inputs. Remove images or switch models.",
             self.current_model()

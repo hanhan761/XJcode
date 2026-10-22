@@ -14,6 +14,71 @@ use pretty_assertions::assert_eq;
 use std::collections::VecDeque;
 
 #[tokio::test]
+async fn xjtu_image_path_paste_warns_without_replacing_draft_for_text_models() {
+    let (mut chat, mut events, _operations) = make_chatwidget_manual(None).await;
+    chat.config.model_provider_id = "xjtu".into();
+    let current = chat.current_model().to_string();
+    let mut models = chat.model_catalog.try_list_models().unwrap();
+    models
+        .iter_mut()
+        .find(|model| model.model == current)
+        .unwrap()
+        .input_modalities
+        .retain(|modality| *modality != InputModality::Image);
+    chat.model_catalog = Arc::new(ModelCatalog::new(models));
+    chat.sync_image_paste_enabled();
+    chat.apply_external_edit("保留这段问题".into());
+    while events.try_recv().is_ok() {}
+    let temporary = tempfile::tempdir().unwrap();
+    let path = temporary.path().join("截图 示例.png");
+    image::RgbImage::new(2, 2).save(&path).unwrap();
+    chat.handle_paste(format!("\"{}\"", path.display()));
+    assert_eq!(chat.bottom_pane.composer_text(), "保留这段问题");
+    assert!(chat.bottom_pane.composer_local_images().is_empty());
+    let cells = drain_insert_history(&mut events);
+    assert_eq!(cells.len(), 1);
+    let warning = lines_to_single_string(&cells[0]);
+    assert!(warning.contains("/model"));
+    assert!(warning.contains("图片未发送"));
+    assert!(!warning.contains(path.to_string_lossy().as_ref()));
+    chat.attach_image(path);
+    assert_eq!(chat.bottom_pane.composer_text(), "保留这段问题");
+    assert!(chat.bottom_pane.composer_local_images().is_empty());
+    let cells = drain_insert_history(&mut events);
+    assert_eq!(cells.len(), 1);
+    assert!(lines_to_single_string(&cells[0]).contains("图片未发送"));
+}
+
+#[tokio::test]
+async fn xjtu_vision_model_recognizes_a_quoted_unicode_image_path_as_attachment() {
+    let (mut chat, _events, _operations) = make_chatwidget_manual(None).await;
+    chat.config.model_provider_id = "xjtu".into();
+    let current = chat.current_model().to_string();
+    let mut models = chat.model_catalog.try_list_models().unwrap();
+    let model = models
+        .iter_mut()
+        .find(|model| model.model == current)
+        .unwrap();
+    if !model.input_modalities.contains(&InputModality::Image) {
+        model.input_modalities.push(InputModality::Image);
+    }
+    chat.model_catalog = Arc::new(ModelCatalog::new(models));
+    chat.sync_image_paste_enabled();
+    let temporary = tempfile::tempdir().unwrap();
+    let path = temporary.path().join("截图 示例.png");
+    image::RgbImage::new(2, 2).save(&path).unwrap();
+    chat.handle_paste(format!("\"{}\"", path.display()));
+    assert_eq!(chat.bottom_pane.composer_local_images().len(), 1);
+    assert!(chat.bottom_pane.composer_text().contains("[Image #1]"));
+    assert!(
+        !chat
+            .bottom_pane
+            .composer_text()
+            .contains(path.to_string_lossy().as_ref())
+    );
+}
+
+#[tokio::test]
 async fn composer_submission_sends_once_and_requests_latest() {
     let (mut chat, mut events, mut operations) =
         make_chatwidget_manual(/*model_override*/ None).await;

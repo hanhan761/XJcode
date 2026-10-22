@@ -1,0 +1,336 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-10-21T08:15:55.755680+00:00",
+  "repository": "https://github.com/hanhan761/XJcode",
+  "baseline_commit": "a01cee81a4207d275940cae0125c49b0eb6ce9df",
+  "scope": "current local worktree; no commit or push performed; manifest excludes its own digest",
+  "installed_engine_sha256": "e4bdd630eca377ea93cbff2e5e700519f9c6165b07d438cefdde1e4ce66a388d",
+  "installed_launcher_sha256": "21b559e24716cb2d8114d5af1a79a2af444b95955e50811c40fb34bce06e934d",
+  "counts": {
+    "modified": 21,
+    "added": 19,
+    "source": 26
+  },
+  "files": [
+    {
+      "path": "README-XJCODE.md",
+      "change": "modified",
+      "category": "documentation",
+      "baseline_git_blob": "4baa793b169c3145386010966283a8111b97c614",
+      "working_sha256": "55c1904f924c2fdd122c31ae05b4e41d44cae7ce2fac6fe191ea5eccf697a994",
+      "bytes": 19930
+    },
+    {
+      "path": "XJCODE_ALIGNMENT_ROADMAP.html",
+      "change": "added",
+      "category": "documentation",
+      "baseline_git_blob": null,
+      "working_sha256": "4dd30c2acff1c58b091b0093023913abd2331466094af886b0645de9aac23cf5",
+      "bytes": 229125
+    },
+    {
+      "path": "XJCODE_ALIGNMENT_ROADMAP.md",
+      "change": "added",
+      "category": "documentation",
+      "baseline_git_blob": null,
+      "working_sha256": "93c4fa570286aba395b2424cbeae52a505aeb51ee357ccc6624a53a895ed3e46",
+      "bytes": 33883
+    },
+    {
+      "path": "XJCODE_OPTIMIZATION_LOG.md",
+      "change": "added",
+      "category": "documentation",
+      "baseline_git_blob": null,
+      "working_sha256": "c66e02950db8e8328d5227d1673bcd68db880af5f85475ca24c004a7ffc95de6",
+      "bytes": 17562
+    },
+    {
+      "path": "XJCODE_REPAIR_REPORT_V1.md",
+      "change": "added",
+      "category": "documentation",
+      "baseline_git_blob": null,
+      "working_sha256": "65a9b85d05ac5bd1938b1d7fd59271ae41ea0b683fbe6fd7f4b8a405f4a3b6c4",
+      "bytes": 17118
+    },
+    {
+      "path": "XJCODE_SOURCE_CHANGES.md",
+      "change": "added",
+      "category": "documentation",
+      "baseline_git_blob": null,
+      "working_sha256": "7d6ded50c3779b2974f2fe19e052f99379849bcf98d6f6ff38d900429c481dd0",
+      "bytes": 7509
+    },
+    {
+      "path": "XJCODE_SOURCE_HANDOFF.md",
+      "change": "added",
+      "category": "documentation",
+      "baseline_git_blob": null,
+      "working_sha256": "81867f44f8342c359ddb5ea84c7505bf9fcd46d5dc2174c54faf8e2e3342c89c",
+      "bytes": 2986
+    },
+    {
+      "path": "XJCODE_VALIDATION.md",
+      "change": "modified",
+      "category": "documentation",
+      "baseline_git_blob": "bc7b7475889d4e1ab023cd11e937fcf057637dbe",
+      "working_sha256": "978b2dcbd201bb1f74ff211c0300a022c6c10ca9bf0995f1d5f82de256912715",
+      "bytes": 82611
+    },
+    {
+      "path": "codex-rs/config/src/loader/mod.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "46dbb8b055768542c4d0360059823411cdc66023",
+      "working_sha256": "e695321169a06d934238ad9a6a9bfb48117c23604b4e84780674aa81218d7938",
+      "bytes": 77828
+    },
+    {
+      "path": "codex-rs/core/src/client.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "95956ee043332317aa678fb419b33f64281ef5c2",
+      "working_sha256": "25205840439950106448d9480ae5803a91a200cd3e3b262242fa5abbee1fec7c",
+      "bytes": 125059
+    },
+    {
+      "path": "codex-rs/core/src/config/mod.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "20939cf80bc7afb12ebd635592dff160e76d528f",
+      "working_sha256": "885828c9550a8358df15c5e9202cb23b30469ef4d78c2c11ec3dc5a95e7a0059",
+      "bytes": 218134
+    },
+    {
+      "path": "codex-rs/core/src/session/mod.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "aad25b40d87e18b80a9e411afac7d5cb25e2f574",
+      "working_sha256": "8626603d2c8af28893ab2d09ba4b5520f58aecb1526bdf2399324dde201a1054",
+      "bytes": 224685
+    },
+    {
+      "path": "codex-rs/core/src/session/step_settings.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "83b1edd04c7b6e68c8dcfd3d075786c5af884e60",
+      "working_sha256": "915f0a45febc606cb47641a46d84a7c34e59a5c5a467daf504c4f0bc7bdfabc2",
+      "bytes": 14471
+    },
+    {
+      "path": "codex-rs/core/src/xjtu.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "7a5a5740ce75211bbaea96d5439ff8e8e5423a39",
+      "working_sha256": "6285fb1ce7b3c84a3f55a93b70b69feb29fbe83da96d47ebf6cfc7110ac6e220",
+      "bytes": 18300
+    },
+    {
+      "path": "codex-rs/exec/src/lib.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "8d3fcd88618b1d92b362d3facee54e274239ee2c",
+      "working_sha256": "bab6fe764d30b656d0c3b11710cfb5fa075fe75caadef14098aa18cb8597c71d",
+      "bytes": 90571
+    },
+    {
+      "path": "codex-rs/model-provider/src/provider.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "f8f0790dde816a26b9e10b38df5d3030d4fc2f95",
+      "working_sha256": "40d385c144e0dce5d4f7d1c19e96f7ab1e5d8542101ee1133ef4455097477199",
+      "bytes": 55956
+    },
+    {
+      "path": "codex-rs/tui/src/app/backend_banner_fallback.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "eef5bb0349a467bf867d20bea75e548c58ca9a1b",
+      "working_sha256": "05c7fc170399e910e47b8b954b4f0cd962ad419663e30e2d3712e0a19678ce8b",
+      "bytes": 5548
+    },
+    {
+      "path": "codex-rs/tui/src/app/config_persistence.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "4b5d22f8f6ed8324169fa618cb9a0e0668e16720",
+      "working_sha256": "9b79a7de02dbc4a5a557bf11d02473a51e26d1cc675210fbbad20afa2b1de259",
+      "bytes": 88142
+    },
+    {
+      "path": "codex-rs/tui/src/app/event_dispatch.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "e56cc890c2dd35b23c8fa07d42f1fb9924a7f81e",
+      "working_sha256": "335a5f715a42186c38fd4bffa8b582c2d56b081105eeb61b2191c0efb3a98104",
+      "bytes": 194980
+    },
+    {
+      "path": "codex-rs/tui/src/chatwidget/interaction.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "8a0d75ad258c57639ebf9b831c3f5859db053cd2",
+      "working_sha256": "a99b9111ff038b56d7bf1309fde9a82777c907f3e5bfc9f5ebe51ff34a36a80c",
+      "bytes": 29756
+    },
+    {
+      "path": "codex-rs/tui/src/chatwidget/settings.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "767548773f4b4cfbe5ed7c7bae76c7879b19b0f7",
+      "working_sha256": "6139d4d892eddd21b47990a6510f1857c0c417df39408415238810fe7b634e3c",
+      "bytes": 31768
+    },
+    {
+      "path": "codex-rs/tui/src/chatwidget/tests/composer_submission.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "5443074228fbd5b58e78a0273754deb745424807",
+      "working_sha256": "a23064c82188c893c13c25d63c321cd496e92218c41a9741181e0b1a2e79ce15",
+      "bytes": 116545
+    },
+    {
+      "path": "docs/xjcode/vision-20261019/REPORT.md",
+      "change": "added",
+      "category": "documentation",
+      "baseline_git_blob": null,
+      "working_sha256": "7c68cbcd757dd987ab99db3621863e37ab6854098f2af98158751fabdf0ee666",
+      "bytes": 6954
+    },
+    {
+      "path": "docs/xjcode/vision-20261019/fixture-1.png",
+      "change": "added",
+      "category": "synthetic-test-image",
+      "baseline_git_blob": null,
+      "working_sha256": "e2dee500c1fb412bfac4de2d7707ae50a59066dff09e7b827e7378879ce43915",
+      "bytes": 10068
+    },
+    {
+      "path": "docs/xjcode/vision-20261019/fixture-2.png",
+      "change": "added",
+      "category": "synthetic-test-image",
+      "baseline_git_blob": null,
+      "working_sha256": "410fc3a6b77e0176335f82ba17fd7d9a04eb4fb6f551c08f86fba4046af38f60",
+      "bytes": 9917
+    },
+    {
+      "path": "docs/xjcode/vision-20261019/fixture-3.png",
+      "change": "added",
+      "category": "synthetic-test-image",
+      "baseline_git_blob": null,
+      "working_sha256": "f14ea89d91e449fa4e0c8ee2f5c23f3697f98bb71dfa7c5b806f768a11eb57cc",
+      "bytes": 9012
+    },
+    {
+      "path": "docs/xjcode/vision-20261019/results.csv",
+      "change": "added",
+      "category": "documentation",
+      "baseline_git_blob": null,
+      "working_sha256": "8fc6a7b1ca38e7a05de3cc512c5bb9d227f5f4e80268e0ed635791479d3a0209",
+      "bytes": 1334
+    },
+    {
+      "path": "docs/xjcode/vision-20261019/results.json",
+      "change": "added",
+      "category": "documentation",
+      "baseline_git_blob": null,
+      "working_sha256": "e50bfefd1240e3b444bb934558ca3cf3ebdae133ca785916eb3d4062c1c61a5b",
+      "bytes": 18940
+    },
+    {
+      "path": "scripts/create-xjcode-vision-fixtures.py",
+      "change": "added",
+      "category": "source",
+      "baseline_git_blob": null,
+      "working_sha256": "ff26f05d37dbbbd087a448bb88fd6b2046b881d732cb4b12862646424f7ad23f",
+      "bytes": 1878
+    },
+    {
+      "path": "scripts/repair-xjcode-command.ps1",
+      "change": "added",
+      "category": "source",
+      "baseline_git_blob": null,
+      "working_sha256": "72ee060929a89aa15ab1b5656393ad77de2b8646e21a6f404e4e6d96744364b0",
+      "bytes": 3303
+    },
+    {
+      "path": "xjcode-native/examples/probe_vision_models.rs",
+      "change": "added",
+      "category": "source",
+      "baseline_git_blob": null,
+      "working_sha256": "7585629661e3f7b60cf0e134ca689f9eeae8c96ef5311bfcc954211c25461f37",
+      "bytes": 10531
+    },
+    {
+      "path": "xjcode-native/src/api.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "0095b96fc92acb33fab3c8d575cd84d064cb6d5d",
+      "working_sha256": "b068f21ac065e8becdd2e2f73004cb844a7a5169a56dc2f089c644eeaebf2962",
+      "bytes": 72275
+    },
+    {
+      "path": "xjcode-native/src/capabilities.rs",
+      "change": "added",
+      "category": "source",
+      "baseline_git_blob": null,
+      "working_sha256": "ea6b9e16c562302f332d5365533a031b59388a8688a928f1b92b2760e7cbc865",
+      "bytes": 7850
+    },
+    {
+      "path": "xjcode-native/src/diagnostics.rs",
+      "change": "added",
+      "category": "source",
+      "baseline_git_blob": null,
+      "working_sha256": "8349264085bb7a923027d8cbb61314a5e9dd4e9a7c589867f5299e728b2487fc",
+      "bytes": 22376
+    },
+    {
+      "path": "xjcode-native/src/doctor.rs",
+      "change": "added",
+      "category": "source",
+      "baseline_git_blob": null,
+      "working_sha256": "0fbcf8648bb16ec576767b4afce761e4471b9286db00b00b2c5d5b36ff6e4ac2",
+      "bytes": 5149
+    },
+    {
+      "path": "xjcode-native/src/images.rs",
+      "change": "added",
+      "category": "source",
+      "baseline_git_blob": null,
+      "working_sha256": "af5d61508f6731943fe3719ddbd74b330c199579403cd6653f306bcf1bdcdc9e",
+      "bytes": 7394
+    },
+    {
+      "path": "xjcode-native/src/lib.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "e9d7052376de953dfca82ebc4572499421e19914",
+      "working_sha256": "09c3923926be7ec27e9422f816aac0650351ca6d4964fbd740fe547cc8f70c02",
+      "bytes": 170
+    },
+    {
+      "path": "xjcode-native/src/main.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "abaf60112f2a5f71fa14b33576753209102ca8a9",
+      "working_sha256": "4f0cbd55b40c30ae543b0338a460012246a5446b30438f39ac24189ef5611329",
+      "bytes": 17566
+    },
+    {
+      "path": "xjcode-native/src/protocol.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "92eb8103c1e98bce647b6cf2e0c108109eff18f5",
+      "working_sha256": "00a974c113e9ad5a96e76ce4f22a588b8dde1e2439afcdd8d19ab2bee286e3ef",
+      "bytes": 71817
+    },
+    {
+      "path": "xjcode-native/src/setup.rs",
+      "change": "modified",
+      "category": "source",
+      "baseline_git_blob": "d66a3f6f6beaa9fd31a4a549fac1acd2f074dc4c",
+      "working_sha256": "1f6fc9d78231380db8ca562b0696ab6d1275a75fdf100b2e28e61c340b39cbe2",
+      "bytes": 7385
+    }
+  ]
+}

@@ -313,6 +313,19 @@ impl StepSettings {
         &self,
         constraints: &StepSettingsConstraints<'_>,
     ) -> ConstraintResult<()> {
+        if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+            let authorized = xjcode_native::auth::home()
+                .and_then(|home| xjcode_native::setup::load(&home))
+                .is_ok_and(|settings| settings.models.iter().any(|item| item.name == self.collaboration_mode.model()));
+            if !authorized {
+                return Err(ConstraintError::InvalidValue {
+                    field_name: "model",
+                    candidate: "所选模型".to_string(),
+                    allowed: "交晓智授权目录（运行 xjcode models 查看）".to_string(),
+                    requirement_source: codex_config::RequirementSource::Unknown,
+                });
+            }
+        }
         if constraints.trusted_guardian_reviewer {
             return Ok(());
         }

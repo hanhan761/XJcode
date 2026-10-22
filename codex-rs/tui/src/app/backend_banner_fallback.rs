@@ -47,6 +47,9 @@ impl App {
         &mut self,
         app_server: &mut AppServerSession,
     ) {
+        if crate::branding::is_xjcode() {
+            return;
+        }
         // Reattached tasks must wait for the read that supersedes the latest hard stop.
         if self.rate_limit_refresh_state.has_pending_recovery() {
             return;

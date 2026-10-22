@@ -13,25 +13,30 @@ pub struct Settings {
     pub models: Vec<Model>,
 }
 pub fn load(home: &Path) -> Result<Settings> {
-    serde_json::from_slice(
+    let mut settings = serde_json::from_slice(
         &std::fs::read(home.join("xjtu.json")).context("请运行 xjcode login 完成模型配置")?,
     )
-    .context("XJCode 配置损坏")
+    .context("XJCode 配置损坏")?;
+    crate::capabilities::apply(home, &mut settings);
+    Ok(settings)
 }
 pub fn catalog(s: &Settings) -> Value {
     json!({"models":s.models.iter().map(|m|json!({
-        "slug":m.name,"display_name":m.name,"description":"交晓智原生接口",
+        "slug":m.name,"display_name":m.name,"description":if m.verified_image_input {"交晓智原生接口 · 支持图片"} else if m.platform_supports_images() {"交晓智原生接口 · 支持图片（平台声明）"} else {"交晓智原生接口"},
         "supported_reasoning_levels":[],"shell_type":"shell_command","visibility":"list","supported_in_api":true,
         "priority":if m.name==s.model {0} else {10},"availability_nux":null,"upgrade":null,
         "include_skills_usage_instructions":true,"include_plugin_usage_instructions":true,"include_apps_usage_instructions":false,
         "supports_reasoning_summary_parameter":false,"support_verbosity":false,"default_verbosity":null,
         "apply_patch_tool_type":"freeform","truncation_policy":{"mode":"bytes","limit":12000},
         "context_window":32768,"effective_context_window_percent":80,"experimental_supported_tools":[],
-        "input_modalities":["text"],"node_repl_disabled":true,"guardian":{},
+        "input_modalities":if m.supports_images() {vec!["text","image"]} else {vec!["text"]},"node_repl_disabled":true,"guardian":{},
         "model_messages":{"instructions_template":"You are XJCode, a coding agent using XJTU models. Use the provided tools to inspect and modify the current project, obey AGENTS.md, verify changes, and report actual results. Never claim execution without tool evidence. Prefer concise Chinese explanations unless the user requests another language."}
     })).collect::<Vec<_>>()})
 }
 pub fn save(home: &Path, s: &Settings) -> Result<()> {
+    let mut scoped = s.clone();
+    crate::capabilities::apply(home, &mut scoped);
+    let s = &scoped;
     ensure!(
         s.models.iter().any(|m| m.name == s.model),
         "默认模型不在授权目录中"
@@ -85,7 +90,7 @@ mod tests {
         Settings { account_id: "fixture".into(), workspace_id: "workspace".into(),
             workspace_name: "工作区".into(), model: "fixture-model".into(),
             models: vec![Model { name: "fixture-model".into(), service_id: "service".into(),
-                upstream_name: "upstream".into(), source_type: "external".into() }] }
+                upstream_name: "upstream".into(), source_type: "external".into(), features: vec![], verified_image_input: false }] }
     }
     #[test]
     fn config_update_preserves_user_extensions() {
@@ -97,6 +102,18 @@ mod tests {
         assert_eq!(config["mcp_servers"]["local"]["command"].as_str(), Some("fixture-server"));
         assert_eq!(config["model_providers"]["xjtu"]["wire_api"].as_str(), Some("xjtu_top"));
         assert_eq!(config["analytics"]["enabled"].as_bool(), Some(false));
+    }
+    #[test]
+    fn only_explicit_campus_vision_features_enable_image_inputs() {
+        let mut settings = settings();
+        settings.models[0].name = "qwen-vl-looking-name".into();
+        assert_eq!(catalog(&settings)["models"][0]["input_modalities"], json!(["text"]));
+        settings.models[0].features = vec!["vision".into()];
+        assert_eq!(catalog(&settings)["models"][0]["input_modalities"], json!(["text", "image"]));
+        let mut legacy = serde_json::to_value(&settings).unwrap();
+        legacy["models"][0].as_object_mut().unwrap().remove("features");
+        let restored: Settings = serde_json::from_value(legacy).unwrap();
+        assert!(!restored.models[0].supports_images());
     }
     #[test]
     fn invalid_existing_config_does_not_replace_account_state() {

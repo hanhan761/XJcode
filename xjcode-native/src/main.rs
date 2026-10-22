@@ -29,7 +29,7 @@ async fn run() -> Result<()> {
         }
         "--help" | "-h" | "help" => {
             println!(
-                "XJCode — 使用交晓智的本地编程工具\n\nxjcode login [--force]     西交登录，自动配置凭据\nxjcode login status        登录状态\nxjcode logout              清除本机凭据\nxjcode models [--refresh]  列出授权模型\nxjcode models --select    选择默认模型\nxjcode doctor [--probe]    环境诊断（--probe 会调用一次模型）\nxjcode                    交互编程\nxjcode exec \"任务\"         单次任务\nxjcode resume             恢复会话\nxjcode mcp                管理本地 MCP 扩展（会话内使用 /skills）\n\n命令详情：xjcode exec --help。默认上下文预算 32768 tokens，可在 config.toml 中调整。"
+                "XJCode — 使用交晓智的本地编程工具\n\nxjcode login [--force]     西交登录，自动配置凭据\nxjcode login status        登录状态\nxjcode logout              清除本机凭据\nxjcode models [--refresh]  列出授权模型\nxjcode models --select    选择默认模型\nxjcode doctor [--probe] [-m 模型]  环境诊断（--probe 会调用一次指定模型）\nxjcode                    交互编程\nxjcode exec \"任务\"         单次任务\nxjcode resume             恢复会话\nxjcode mcp                管理本地 MCP 扩展（会话内使用 /skills）\n\n命令详情：xjcode exec --help。默认上下文预算 32768 tokens，可在 config.toml 中调整。"
             );
             return Ok(());
         }
@@ -74,6 +74,9 @@ async fn run() -> Result<()> {
         "models" => {
             let mut settings = setup::load(&home)?;
             if args.iter().any(|a| a == "--refresh") {
+                // TUI selection updates config.toml independently of the login
+                // snapshot. Refresh capabilities without restoring an old model.
+                settings.model = xjcode_native::doctor::Options::default().model_name(&home, &settings)?;
                 let c = auth::load_at(&home)?;
                 ensure!(c.account_id == settings.account_id, "账号不一致");
                 settings.models = TopClient::new(c)?.models(&settings.workspace_id).await?;
@@ -92,21 +95,28 @@ async fn run() -> Result<()> {
                 settings.model = settings.models[select("模型", &labels)?].name.clone();
                 setup::save(&home, &settings)?;
             }
+            xjcode_native::capabilities::apply(&home, &mut settings);
             for model in settings.models {
                 println!(
-                    "{} {}",
+                    "{} {}{}",
                     if model.name == settings.model {
                         "*"
                     } else {
                         " "
                     },
-                    model.name
+                    model.name,
+                    if model.verified_image_input { "  [图片]" } else if model.platform_supports_images() { "  [图片·平台声明]" } else { "" }
                 );
             }
             return Ok(());
         }
         "doctor" => {
-            return doctor(&home, args.iter().any(|a| a == "--probe")).await;
+            if args.len() == 2 && (args[1] == "--help" || args[1] == "-h") {
+                println!("{}", xjcode_native::doctor::USAGE);
+                return Ok(());
+            }
+            let options = xjcode_native::doctor::Options::parse(&args[1..])?;
+            return doctor(&home, options).await;
         }
         "cloud" | "app" | "update" | "remote-control" | "app-server" | "agents"
         | "login-with-api-key" => bail!("此入口依赖其他后端，XJCode 第一版不提供"),
@@ -135,6 +145,8 @@ async fn run() -> Result<()> {
             settings.account_id == c.account_id,
             "账号不一致，请重新登录"
         );
+        #[cfg(windows)]
+        configure_python_environment(&mut cmd);
     }
     cmd.args(&args);
     if is_help {
@@ -154,6 +166,54 @@ async fn run() -> Result<()> {
     let status = cmd.status().context("无法启动 XJCode 编程引擎")?;
     std::process::exit(status.code().unwrap_or(1));
 }
+
+#[cfg(windows)]
+fn configure_python_environment(command: &mut std::process::Command) {
+    use std::os::windows::process::CommandExt;
+    use std::path::PathBuf;
+
+    // Captured/background Python stdout otherwise waits in a block buffer,
+    // hiding progress even while a training process is actively computing.
+    command.env("PYTHONUNBUFFERED", "1");
+
+    fn usable_python(path: &Path) -> bool {
+        path.is_absolute()
+            && path.file_name().and_then(|name| name.to_str()).is_some_and(|name| name.eq_ignore_ascii_case("python.exe"))
+            && !path.to_string_lossy().to_ascii_lowercase().contains("\\microsoft\\windowsapps\\")
+            && std::fs::metadata(path).is_ok_and(|metadata| metadata.is_file() && metadata.len() > 0)
+    }
+
+    let search_paths: Vec<PathBuf> = std::env::var_os("PATH")
+        .map(|path| std::env::split_paths(&path).collect())
+        .unwrap_or_default();
+    let python = std::env::var_os("XJCODE_PYTHON")
+        .map(PathBuf::from)
+        .filter(|path| usable_python(path))
+        .or_else(|| search_paths.iter().map(|dir| dir.join("python.exe")).find(|path| usable_python(path)))
+        .or_else(|| {
+            let launcher = search_paths.iter().map(|dir| dir.join("py.exe")).find(|path| {
+                !path.to_string_lossy().to_ascii_lowercase().contains("\\microsoft\\windowsapps\\")
+                    && std::fs::metadata(path).is_ok_and(|metadata| metadata.is_file() && metadata.len() > 0)
+            })?;
+            // Query only interpreter identity. Isolated mode skips project and
+            // user startup code; no task scripts or solver jobs are executed.
+            let output = std::process::Command::new(launcher)
+                .args(["-3", "-I", "-S", "-c", "import sys; sys.stdout.buffer.write(sys.executable.encode('utf-8'))"])
+                .creation_flags(windows_sys::Win32::System::Threading::CREATE_NO_WINDOW)
+                .output().ok()?;
+            if !output.status.success() { return None; }
+            let path = PathBuf::from(String::from_utf8(output.stdout).ok()?.trim());
+            usable_python(&path).then_some(path)
+        });
+    let Some(python) = python else { return };
+    let Some(parent) = python.parent() else { return };
+    let mut child_paths = vec![parent.to_path_buf()];
+    child_paths.extend(search_paths.into_iter().filter(|path| path != parent));
+    if let Ok(path) = std::env::join_paths(child_paths) {
+        command.env("PATH", path).env("XJCODE_PYTHON", python);
+    }
+}
+
 fn select(label: &str, options: &[String]) -> Result<usize> {
     ensure!(!options.is_empty(), "没有可用{label}");
     if options.len() == 1 {
@@ -218,7 +278,7 @@ async fn configure(home: &Path, credentials: auth::Credentials) -> Result<()> {
     );
     Ok(())
 }
-async fn doctor(home: &Path, probe: bool) -> Result<()> {
+async fn doctor(home: &Path, options: xjcode_native::doctor::Options) -> Result<()> {
     println!(
         "XJCode {}\n配置目录：{}",
         env!("CARGO_PKG_VERSION"),
@@ -237,6 +297,7 @@ async fn doctor(home: &Path, probe: bool) -> Result<()> {
     }
     let credentials = auth::load_at(home)?;
     let settings = setup::load(home)?;
+    let selected_model = options.model_name(home, &settings)?;
     let client = TopClient::new(credentials.clone())?;
     ensure!(
         client.identity().await? == credentials.account_id
@@ -247,10 +308,10 @@ async fn doctor(home: &Path, probe: bool) -> Result<()> {
     let models = client.models(&settings.workspace_id).await?;
     let model = models
         .iter()
-        .find(|m| m.name == settings.model)
-        .context("默认模型未授权或未运行")?;
+        .find(|m| m.name == selected_model)
+        .context("诊断模型不在交晓智当前授权目录或未运行；请刷新目录并检查模型选择")?;
     println!("工作区及模型目录：通过（{}）", model.name);
-    if probe {
+    if options.probe {
         let response = client
             .complete(&settings.workspace_id, model, "Reply exactly XJCODE_OK")
             .await?;
