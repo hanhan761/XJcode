@@ -9,14 +9,13 @@ name = '.xjcode-probe-' + uuid.uuid4().hex + '.tmp'
 inside = workspace / name
 ps = pathlib.Path(os.environ['SystemRoot']) / 'System32/WindowsPowerShell/v1.0/powershell.exe'
 def quoted(path): return "'" + str(path).replace("'", "''") + "'"
-with tempfile.TemporaryDirectory(prefix='xjcode-outside-') as outside:
+with tempfile.TemporaryDirectory(prefix='xjcode-outside-', dir=workspace.parent) as outside:
     denied = pathlib.Path(outside) / name
     script = "$ErrorActionPreference='Stop'; [IO.File]::WriteAllText(" + quoted(inside) + ", 'XJCODE_WORKSPACE_OK'); try { [IO.File]::WriteAllText(" + quoted(denied) + ", 'unexpected'); exit 31 } catch { }; exit 0"
-    # The OS temp directory is normally writable. Exclude it explicitly to make
-    # the outside-write assertion meaningful, while preserving project access.
-    cmd = [str(pathlib.Path(a.exe).resolve()), 'sandbox', '-P', ':workspace',
-           '-c', 'sandbox_workspace_write.exclude_tmpdir_env_var=true',
-           '-c', 'sandbox_workspace_write.exclude_slash_tmp=true', '--', str(ps),
+    # :workspace deliberately includes OS temp roots. Legacy sandbox_workspace_write
+    # overrides do not alter an explicitly selected built-in permission profile.
+    # A fresh sibling outside cwd tests the real write boundary without changing it.
+    cmd = [str(pathlib.Path(a.exe).resolve()), 'sandbox', '-P', ':workspace', '--', str(ps),
            '-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command', script]
     try:
         r = subprocess.run(cmd, cwd=workspace, capture_output=True, timeout=45,

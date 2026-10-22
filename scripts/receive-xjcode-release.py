@@ -3,9 +3,9 @@ Run only through the verified yun target. The config is private and contains a
 one-use bearer token, byte length and checksum; it is never a release asset.
 """
 import fcntl, hashlib, hmac, http.server, json, os, pathlib, shutil, signal, subprocess, sys, time
-root = pathlib.Path('/var/tmp/xjcode-transfer-013')
+root = pathlib.Path('/var/tmp/xjcode-transfer-014')
 spec = json.loads((root/'transfer.json').read_text())
-archive = pathlib.Path('/var/tmp/xjcode-publish-0.1.3.zip')
+archive = pathlib.Path('/var/tmp/xjcode-publish-0.1.4.zip')
 lock = open('/var/lock/wenshanzhike-deploy.lock','a')
 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
 usage = shutil.disk_usage(root)
@@ -14,8 +14,8 @@ config = pathlib.Path('/opt/wenshanzhike/deploy/Caddyfile.prod')
 original = config.read_bytes()
 marker = b'xjcode.wenshanzhike.com {\n  import security_headers\n'
 assert original.count(marker) == 1
-route_path = '/_release-upload-013'
-route = b'  handle /_release-upload-013 {\n    reverse_proxy 172.19.0.1:18794\n  }\n'
+route_path = '/_release-upload-014'
+route = b'  handle /_release-upload-014 {\n    reverse_proxy 172.19.0.1:18795\n  }\n'
 updated = original.replace(marker, marker + route)
 (root/'Caddyfile.rollback').write_bytes(original)
 def caddy(action):
@@ -48,7 +48,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(201); self.end_headers()
         except Exception:
             self.send_error(400, 'Transfer not accepted')
-server = http.server.HTTPServer(('172.19.0.1',18794), Handler)
+server = http.server.HTTPServer(('172.19.0.1',18795), Handler)
 server.timeout = 3; server.complete = False
 try:
     config.write_bytes(updated)
@@ -63,4 +63,4 @@ finally:
     (root/'transfer.json').unlink(missing_ok=True)
 print('TRANSFER_VERIFIED_AND_ROUTE_REMOVED',flush=True)
 archive.with_suffix('.zip.ready').write_text('verified HTTPS upload completed\n')
-subprocess.run(['python3','/var/tmp/xjcode-transfer-013/deploy.py',str(archive),spec['sha256']],env={**os.environ,'XJCODE_DEPLOY_LOCK_FD':str(lock.fileno())},pass_fds=(lock.fileno(),),check=True)
+subprocess.run(['python3','/var/tmp/xjcode-transfer-014/deploy.py',str(archive),spec['sha256']],env={**os.environ,'XJCODE_DEPLOY_LOCK_FD':str(lock.fileno())},pass_fds=(lock.fileno(),),check=True)

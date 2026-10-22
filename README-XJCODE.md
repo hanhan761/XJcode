@@ -9,7 +9,7 @@ XJCode 是基于 OpenAI Codex 源码的本地编程命令行工具，使用西�
 已有 Node.js 22 或以上：直接用 npm 安装 .tgz 文件或网站提供的 tarball URL。安装命令：
 
 ~~~powershell
-npm install -g https://xjcode.wenshanzhike.com/releases/0.1.3/xjcode-0.1.3.tgz
+npm install -g https://xjcode.wenshanzhike.com/releases/0.1.4/xjcode-0.1.4.tgz
 xjcode login
 cd D:\your-project
 xjcode
@@ -75,7 +75,7 @@ xjcode logout
 .\scripts\build-xjcode.ps1 -Profile release
 ```
 
-脚本识别 Visual Studio，使用锁文件构建引擎、登录器和 Windows 沙箱辅助程序，运行交晓智针对性测试，生成 `dist\xjcode-0.1.3-windows-x64-<profile>.zip`。包内附 SHA256 校验清单，安装前核验。源码下载如需代理，请仅在本机配置 Cargo/Git；不要把代理凭据提交到仓库。
+脚本识别 Visual Studio，使用锁文件构建引擎、登录器和 Windows 沙箱辅助程序，运行交晓智针对性测试，生成 `dist\xjcode-0.1.4-windows-x64-<profile>.zip`。包内附 SHA256 校验清单，安装前核验。源码下载如需代理，请仅在本机配置 Cargo/Git；不要把代理凭据提交到仓库。
 
 模块职责：
 
