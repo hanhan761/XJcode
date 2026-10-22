@@ -51,12 +51,12 @@ impl HistoryCell for UpdateAvailableHistoryCell {
                 "✨\u{200A}".bold().fg(accent_color()),
                 "Update available!".bold().fg(accent_color()),
                 " ",
-                format!("{CODEX_CLI_VERSION} -> {}", self.latest_version).bold(),
+                format!("{} -> {}", if crate::branding::is_xjcode() { xjcode_native::updates::VERSION } else { CODEX_CLI_VERSION }, self.latest_version).bold(),
             ],
             update_instruction,
             "",
             "See full release notes:",
-            "https://github.com/openai/codex/releases/latest"
+            (if crate::branding::is_xjcode() { "https://xjcode.wenshanzhike.com/#updates" } else { "https://github.com/openai/codex/releases/latest" })
                 .fg(accent_color())
                 .underlined(),
         ];
@@ -77,11 +77,11 @@ impl HistoryCell for UpdateAvailableHistoryCell {
         };
         vec![
             Line::from("Update available!"),
-            Line::from(format!("{CODEX_CLI_VERSION} -> {}", self.latest_version)),
+            Line::from(format!("{} -> {}", if crate::branding::is_xjcode() { xjcode_native::updates::VERSION } else { CODEX_CLI_VERSION }, self.latest_version)),
             Line::from(update_instruction),
             Line::from(""),
             Line::from("See full release notes:"),
-            Line::from("https://github.com/openai/codex/releases/latest"),
+            Line::from(if crate::branding::is_xjcode() { "https://xjcode.wenshanzhike.com/#updates" } else { "https://github.com/openai/codex/releases/latest" }),
         ]
     }
 

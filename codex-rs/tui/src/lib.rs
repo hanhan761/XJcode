@@ -191,7 +191,6 @@ mod motion;
 mod multi_agents;
 mod named_session_lookup;
 mod notifications;
-#[cfg(any(not(debug_assertions), test))]
 mod npm_registry;
 pub(crate) mod onboarding;
 mod oss_selection;
@@ -254,12 +253,10 @@ pub(crate) mod update_action;
 mod worktree_startup;
 pub use update_action::DaemonUpdateSource;
 pub use update_action::UpdateAction;
-#[cfg(not(debug_assertions))]
 pub use update_action::get_update_action;
 mod update_prompt;
 mod update_versions;
 mod updates;
-#[cfg(any(not(debug_assertions), test))]
 mod updates_cache;
 mod version;
 mod vim_search;
@@ -1190,7 +1187,6 @@ async fn run_ratatui_app(
     }));
     let (mut tui, mut terminal_restore_guard, mut startup_draft) = startup_draft.into_parts();
 
-    #[cfg(not(debug_assertions))]
     {
         use crate::update_prompt::UpdatePromptOutcome;
 

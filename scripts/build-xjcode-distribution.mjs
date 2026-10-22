@@ -43,6 +43,7 @@ try{await fs.access(nodeFile);}catch{
 }
 if(await hash(nodeFile)!==node.sha256)throw Error('Cached Node checksum mismatch');
 const manifest={version,npm:{file:tarball,sha256:await hash(path.join(release,tarball)),bundledNative:true},
+ bootstrap:{file:'bootstrap-xjcode.ps1',sha256:await hash(path.join(release,'bootstrap-xjcode.ps1'))},
  native:{file:'xjcode-windows-x64.zip',sha256:nativeHash},node:{version:node.version,file:node.file,sha256:node.sha256}};
 await fs.writeFile(path.join(release,'release-manifest.json'),JSON.stringify(manifest,null,2)+'\n');
 const csc=path.join(process.env.SystemRoot||'C:/Windows','Microsoft.NET/Framework64/v4.0.30319/csc.exe');
@@ -57,4 +58,5 @@ for(const file of ['index.html','style.css','app.js','favicon.svg'])
 await fs.copyFile(path.join(root,'scripts/bootstrap-xjcode.ps1'),path.join(web,'install.ps1'));
 const checksum=(await hash(path.join(web,'XJCode-Setup.exe')))+'  XJCode-Setup.exe\n';
 await fs.writeFile(path.join(web,'SHA256SUMS.txt'),checksum);
+await fs.writeFile(path.join(web,'latest.json'),JSON.stringify({schema:1,version,manifest_sha256:await hash(path.join(release,'release-manifest.json'))},null,2)+'\n');
 console.log('Built npm tarball, offline setup executable and website: '+web);

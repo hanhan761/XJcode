@@ -42,16 +42,16 @@ pub(crate) fn with_border_with_inner_width(
 
 /// Brand title shared by the session header and the status card; each owns its own indentation.
 pub(crate) fn codex_title(version: &str) -> Vec<Span<'static>> {
-    if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+    if std::env::var_os("XJCODE_MODE").is_some() {
         return vec![
             "◆ ".fg(accent_color()),
             "XJCode".bold().fg(accent_color()),
-            "  /  交晓智编程助手".dim(),
+            "  /  本地编程助手".dim(),
         ];
     }
     vec![
         ">_ ".fg(accent_color()),
-        if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+        if std::env::var_os("XJCODE_MODE").is_some() {
             "XJCode"
         } else {
             "OpenAI Codex"
@@ -225,7 +225,7 @@ pub(crate) fn new_session_info(
     ));
     let mut parts: Vec<Box<dyn HistoryCell>> = vec![Box::new(header)];
 
-    if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+    if std::env::var_os("XJCODE_MODE").is_some() {
         let lines = vec![
             Line::from(vec![
                 "  开始创作  ".fg(accent_color()).bold(),
@@ -387,14 +387,14 @@ impl SessionHeaderHistoryCell {
 impl HistoryCell for SessionHeaderHistoryCell {
     fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
         let width = usize::from(width);
-        if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+        if std::env::var_os("XJCODE_MODE").is_some() {
             let rule_width = width.saturating_sub(4).min(68);
             let mut lines = vec![
                 Line::default(),
                 Line::from(vec![
                     "  ◆  ".fg(accent_color()),
                     "XJCode".fg(accent_color()).bold(),
-                    "    交晓智 · 编程工作台".dim(),
+                    "    XJCode · 编程工作台".dim(),
                 ]),
                 Line::from(vec![
                     "  ".into(),
@@ -445,7 +445,7 @@ impl HistoryCell for SessionHeaderHistoryCell {
         let mut lines = vec![
             Line::from(format!(
                 "{} (v{})",
-                if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+                if std::env::var_os("XJCODE_MODE").is_some() {
                     "XJCode"
                 } else {
                     "OpenAI Codex"

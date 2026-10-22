@@ -1,6 +1,6 @@
 //! Public names for the campus launcher; protocol and storage identifiers stay unchanged.
 pub(crate) fn is_xjcode() -> bool {
-    std::env::var_os("XJCODE_PROVIDER_LOCK").is_some()
+    std::env::var_os("XJCODE_MODE").is_some()
 }
 
 pub(crate) fn command() -> &'static str {

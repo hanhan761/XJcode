@@ -102,7 +102,7 @@ impl EventProcessorWithHumanOutput {
             ThreadItem::AgentMessage { text, .. } => {
                 eprintln!(
                     "{}\n{}",
-                    (if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+                    (if std::env::var_os("XJCODE_MODE").is_some() {
                         "xjcode"
                     } else {
                         "codex"
@@ -224,7 +224,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
         session_configured_event: &SessionConfiguredEvent,
     ) {
         const VERSION: &str = env!("CARGO_PKG_VERSION");
-        if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+        if std::env::var_os("XJCODE_MODE").is_some() {
             eprintln!("XJCode · 交晓智编程助手\n--------");
         } else {
             eprintln!("OpenAI Codex v{VERSION}\n--------");
@@ -436,7 +436,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
         {
             eprintln!(
                 "{}\n{}",
-                (if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+                (if std::env::var_os("XJCODE_MODE").is_some() {
                     "xjcode"
                 } else {
                     "codex"

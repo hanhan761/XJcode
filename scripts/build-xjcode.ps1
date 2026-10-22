@@ -57,6 +57,10 @@ foreach ($dll in Get-ChildItem -LiteralPath (Join-Path $nativeTarget $artifactPr
 foreach ($doc in @('LICENSE', 'NOTICE', 'README-XJCODE.md')) { Copy-Item -LiteralPath (Join-Path $repo $doc) -Destination $package -Force }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'install-xjcode.ps1') -Destination (Join-Path $package 'install.ps1') -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Install-XJCode.cmd') -Destination $package -Force
+$csc=Join-Path $env:SystemRoot 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+& $csc /nologo /target:winexe /platform:x64 /codepage:65001 ('/out:'+(Join-Path $package 'XJCode-Uninstall.exe')) (Join-Path $PSScriptRoot 'XJCodeUninstall.cs')
+if($LASTEXITCODE -ne 0){throw 'Uninstaller compilation failed.'}
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'manage-xjcode.ps1') -Destination $package -Force
 $hashes = Get-ChildItem -LiteralPath $package -File | Where-Object Name -ne 'SHA256SUMS.txt' | ForEach-Object { '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $_.Name }
 [IO.File]::WriteAllLines((Join-Path $package 'SHA256SUMS.txt'), [string[]]$hashes)
 for ($attempt = 1; $attempt -le 3; $attempt++) {

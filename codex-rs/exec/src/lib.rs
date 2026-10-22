@@ -1005,7 +1005,7 @@ async fn run_exec_session(args: ExecRunArgs) -> anyhow::Result<()> {
 
     // Do not let normalization silently replace newly supplied image inputs
     // with unsupported-media text for a campus text-only model.
-    if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some()
+    if std::env::var_os("XJCODE_MODE").is_some()
         && config.model_provider_id == "xjtu"
         && let InitialOperation::UserTurn { items, .. } = &initial_operation
         && items

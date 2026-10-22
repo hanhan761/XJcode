@@ -86,7 +86,7 @@ fn project_config_directory_name() -> &'static str {
     // XJCode has a separate user home. Looking for .codex below the working
     // directory can otherwise reload Codex's user config as a project override
     // when launched from USERPROFILE, replacing the authorized XJTU model.
-    if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+    if std::env::var_os("XJCODE_MODE").is_some() {
         ".xjcode"
     } else {
         ".codex"

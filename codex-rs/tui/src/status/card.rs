@@ -297,7 +297,7 @@ impl StatusHistoryCell {
         let permission_profile = config.permissions.effective_permission_profile();
         let workspace_roots = config.effective_workspace_roots();
         let cwd = PathUri::from_abs_path(&config.cwd);
-        let model_provider = model_provider_id
+        let model_provider = model_provider_id.or_else(|| crate::branding::is_xjcode().then_some(config.model_provider_id.as_str()))
             .filter(|id| !id.trim().is_empty())
             .map(str::to_string);
         let mut config_entries = vec![
@@ -738,7 +738,7 @@ impl StatusHistoryCell {
         let mut lines = Vec::new();
 
         let account_value = if crate::branding::is_xjcode() {
-            Some("交晓智 · 校园账号（xjcode login）".to_string())
+            Some(if self.model_provider.as_deref()==Some("custom") { "自定义 API · 本机加密 Token".to_string() } else { "交晓智 · 校园账号（xjcode login）".to_string() })
         } else {
             self.account.as_ref().map(|account| match account {
                 StatusAccountDisplay::ChatGpt { email, plan } => match (email, plan) {

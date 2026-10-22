@@ -792,6 +792,11 @@ fn run_update_action(
     action: UpdateAction,
     cli_executable: Option<&std::path::Path>,
 ) -> anyhow::Result<()> {
+    if action==UpdateAction::Xjcode {
+        let executable=std::env::var_os("XJCODE_LAUNCHER_EXE").ok_or_else(||anyhow::anyhow!("Cannot locate XJCode launcher"))?;
+        let status=std::process::Command::new(executable).arg("update").status()?;
+        anyhow::ensure!(status.success(),"XJCode update failed");return Ok(());
+    }
     if let UpdateAction::Daemon(source) = action {
         let executable = cli_executable
             .ok_or_else(|| anyhow::anyhow!("Cannot locate the launching Codex CLI"))?;
@@ -1050,7 +1055,7 @@ async fn cli_main(
         mut interactive,
         subcommand,
     } = MultitoolCli::parse();
-    if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+    if std::env::var_os("XJCODE_MODE").is_some() {
         anyhow::ensure!(remote.remote.is_none(), "XJCode does not support remote backends");
         match &subcommand {
             Some(Subcommand::Login(_) | Subcommand::Logout(_)) => anyhow::bail!("Use xjcode login / xjcode logout without global options"),

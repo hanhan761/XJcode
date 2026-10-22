@@ -2372,7 +2372,7 @@ impl ModelClientSession {
         inference_trace: &InferenceTraceContext,
     ) -> Result<ResponseStream> {
         let wire_api = self.client.state.provider.info().wire_api;
-        if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() && wire_api != WireApi::XjtuTop {
+        if std::env::var_os("XJCODE_MODE").is_some() && !matches!(wire_api, WireApi::XjtuTop | WireApi::Responses) {
             return Err(CodexErr::InvalidRequest(
                 "XJCode only supports the XJTU provider; no fallback is permitted".into(),
             ));

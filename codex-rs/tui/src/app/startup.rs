@@ -878,8 +878,20 @@ Fix the config and retry.\n\
 See the Codex keymap documentation for supported actions and examples."
                 )
             })?;
-        #[cfg(not(debug_assertions))]
         let upgrade_version = crate::updates::get_upgrade_version(&config);
+        if crate::branding::is_xjcode() && std::env::var_os("XJCODE_SKIP_UPDATE_CHECK").is_none() {
+            let home=config.codex_home.to_path_buf();
+            if xjcode_native::updates::due(&home) {
+                let tx=app_event_tx.clone();let already=upgrade_version.clone();
+                tokio::spawn(async move {
+                    if xjcode_native::updates::check(&home).await.is_ok() {
+                        if let Some(version)=xjcode_native::updates::cached_notice(&home) {
+                            if already.as_ref()!=Some(&version) {tx.send(AppEvent::InsertHistoryCell(Box::new(UpdateAvailableHistoryCell::new(version,Some(crate::update_action::UpdateAction::Xjcode)))));}
+                        }
+                    }
+                });
+            }
+        }
 
         let agents_overview =
             agents_overview::AgentsOverviewState::new(local_settings.tui.agents_overview_grouping);
@@ -1169,7 +1181,6 @@ See the Codex keymap documentation for supported actions and examples."
         let mut waiting_for_initial_session_configured = wait_for_initial_session_configured;
         let mut waiting_for_initial_session_header = true;
 
-        #[cfg(not(debug_assertions))]
         let pre_loop_exit_reason = if let Some(latest_version) = upgrade_version {
             let control = Box::pin(app.handle_event(
                 tui,
@@ -1187,8 +1198,7 @@ See the Codex keymap documentation for supported actions and examples."
         } else {
             None
         };
-        #[cfg(debug_assertions)]
-        let pre_loop_exit_reason: Option<ExitReason> = None;
+
 
         let exit_reason_result = if let Some(exit_reason) = pre_loop_exit_reason {
             Ok(exit_reason)

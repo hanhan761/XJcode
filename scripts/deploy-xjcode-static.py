@@ -31,17 +31,17 @@ usage = shutil.disk_usage(base)
 with zipfile.ZipFile(args.archive) as archive:
     manifest = json.loads(archive.read('deployment.json'))
     version = manifest['version']
-    assert version == '0.1.4'
+    assert version == '0.1.5'
     release_id = manifest['release']
-    assert release_id == '20261022-0.1.4'
+    assert release_id == '20261022-0.1.5'
     total = sum(entry.file_size for entry in archive.infolist())
     assert usage.free - total > max(usage.total * .15, 2 * 1024**3), 'disk reserve'
     package_link = base / 'xjcode'
     guide_link = base / 'xjcode-site/current'
     previous_package = os.readlink(package_link)
     previous_guide = os.readlink(guide_link)
-    assert previous_package == 'xjcode-releases/20261016-0.1.3', 'unexpected package release'
-    assert previous_guide == 'releases/20261016-v5', 'unexpected guide release'
+    assert previous_package == 'xjcode-releases/20261022-0.1.4', 'unexpected package release'
+    assert previous_guide == 'releases/20261022-powershell-v1', 'unexpected guide release'
     get('https://www.wenshanzhike.com/api/health')
     assert int(next(line.split()[1] for line in pathlib.Path('/proc/meminfo').read_text().splitlines() if line.startswith('MemAvailable:'))) > 256000
     assert float(pathlib.Path('/proc/pressure/io').read_text().splitlines()[1].split()[1].split('=')[1]) < 5
@@ -50,7 +50,7 @@ with zipfile.ZipFile(args.archive) as archive:
     state_args = ['docker','inspect','wenshanzhike-backend-1','wenshanzhike-edge-1','wenshanzhike-postgres-1','--format','{{.Name}} {{.Image}} {{.RestartCount}} {{.State.OOMKilled}}']
     state_before = subprocess.check_output(state_args)
     release = base / 'xjcode-releases' / release_id
-    guide = base / 'xjcode-site/releases/20261022-v1'
+    guide = base / 'xjcode-site/releases/20261022-0.1.5'
     assert not release.exists() and not guide.exists(), 'immutable release already exists'
     release.mkdir(parents=True)
     for entry in archive.infolist():
@@ -62,26 +62,27 @@ for name, expected in manifest['files'].items(): assert digest(release / name) =
 old = (base / previous_package).resolve()
 node_name = 'node-v24.22.0-win-x64.zip'
 old_node = old / 'releases/0.1.0' / node_name
-release_manifest = json.loads((release / 'releases/0.1.4/release-manifest.json').read_text())
+release_manifest = json.loads((release / 'releases/0.1.5/release-manifest.json').read_text())
 assert digest(old_node) == release_manifest['node']['sha256']
-os.link(old_node, release / 'releases/0.1.4' / node_name)
+os.link(old_node, release / 'releases/0.1.5' / node_name)
 os.symlink('../../20261016-0.1.0/releases/0.1.0', release / 'releases/0.1.0')
 os.symlink('../../20261016-0.1.2/releases/0.1.2', release / 'releases/0.1.2')
 os.symlink('../../20261016-0.1.3/releases/0.1.3', release / 'releases/0.1.3')
+os.symlink('../../20261022-0.1.4/releases/0.1.4', release / 'releases/0.1.4')
 guide.mkdir(parents=True)
-for name in ['index.html','style.css','app.js','favicon.svg','install.ps1']:
+for name in ['index.html','style.css','app.js','favicon.svg','install.ps1','latest.json','SHA256SUMS.txt']:
     shutil.copyfile(release / name, guide / name)
 record = {'previousPackage':previous_package,'previousGuide':previous_guide,'artifactSha256':args.sha256,'sourceRevision':manifest['sourceRevision'],'observationSeconds':60}
 try:
     point(package_link, 'xjcode-releases/' + release_id)
-    point(guide_link, 'releases/20261022-v1')
-    for name in ['index.html','install.ps1','releases/0.1.4/release-manifest.json']:
+    point(guide_link, 'releases/20261022-0.1.5')
+    for name in ['index.html','install.ps1','latest.json','releases/0.1.5/release-manifest.json']:
         assert hashlib.sha256(get('https://xjcode.wenshanzhike.com/' + name)).hexdigest() == manifest['files'][name], name
-    for name in ['XJCode-Setup.exe','releases/0.1.4/xjcode-0.1.4.tgz','releases/0.1.4/xjcode-windows-x64.zip']:
+    for name in ['XJCode-Setup.exe','releases/0.1.5/xjcode-0.1.5.tgz','releases/0.1.5/xjcode-windows-x64.zip']:
         with (release / name).open('rb') as f: expected = f.read(1024)
         actual = subprocess.check_output(['curl','--noproxy','*','-fsS','--range','0-1023','--max-time','15','https://xjcode.wenshanzhike.com/' + name])
         assert actual == expected, name
-    for old_version in ['0.1.0','0.1.2','0.1.3']:
+    for old_version in ['0.1.0','0.1.2','0.1.3','0.1.4']:
         get('https://xjcode.wenshanzhike.com/releases/'+old_version+'/release-manifest.json')
     for _ in range(6):
         for url in ['https://xjcode.wenshanzhike.com/','https://www.wenshanzhike.com/api/health']:
@@ -93,7 +94,7 @@ except Exception:
     point(guide_link, previous_guide)
     point(package_link, previous_package)
     raise
-ops = base / 'xjcode-site/ops/20261022-v1'
+ops = base / 'xjcode-site/ops/20261022-0.1.5'
 ops.mkdir(parents=True)
 (ops / 'verified.json').write_text(json.dumps(record, indent=2))
-print('XJCode 0.1.4 activated; hashes, old URL compatibility and 60-second health checks passed')
+print('XJCode 0.1.5 activated; hashes, old URL compatibility and 60-second health checks passed')

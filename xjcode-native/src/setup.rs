@@ -56,6 +56,7 @@ pub fn save(home: &Path, s: &Settings) -> Result<()> {
     if let Some(providers) = doc.get("model_providers").and_then(|v| v.as_table_like()) {
         ensure!(providers.get("xjtu").is_none_or(|v| v.is_table_like()), "xjtu provider 必须是表，未覆盖");
     }
+    if doc.get("model_provider").and_then(|v|v.as_str())==Some("custom") { doc.remove("model_context_window"); }
     doc["model"] = toml_edit::value(&s.model);
     doc["model_provider"] = toml_edit::value("xjtu");
     doc["model_catalog_json"] =
@@ -95,13 +96,14 @@ mod tests {
     #[test]
     fn config_update_preserves_user_extensions() {
         let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("config.toml"), "[mcp_servers.local]\ncommand = 'fixture-server'\n").unwrap();
+        std::fs::write(dir.path().join("config.toml"), "model_context_window = 64000\n[mcp_servers.local]\ncommand = 'fixture-server'\n").unwrap();
         save(dir.path(), &settings()).unwrap();
         let text = std::fs::read_to_string(dir.path().join("config.toml")).unwrap();
         let config = text.parse::<toml_edit::DocumentMut>().unwrap();
         assert_eq!(config["mcp_servers"]["local"]["command"].as_str(), Some("fixture-server"));
         assert_eq!(config["model_providers"]["xjtu"]["wire_api"].as_str(), Some("xjtu_top"));
         assert_eq!(config["analytics"]["enabled"].as_bool(), Some(false));
+        assert_eq!(config["model_context_window"].as_integer(),Some(64000));
     }
     #[test]
     fn only_explicit_campus_vision_features_enable_image_inputs() {

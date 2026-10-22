@@ -1,12 +1,10 @@
 //! Shared picker presentation for the installed CLI's update choices.
 //! Update discovery and execution remain disabled in debug builds.
 
-#![cfg(any(not(debug_assertions), test))]
 
 use crate::bottom_pane::picker_option_list;
 use crate::bottom_pane::render_menu_surface;
 use crate::key_hint;
-#[cfg(not(debug_assertions))]
 use crate::legacy_core::config::Config;
 use crate::render::Insets;
 use crate::render::renderable::FlexRenderable;
@@ -14,14 +12,10 @@ use crate::render::renderable::Renderable;
 use crate::render::renderable::RenderableExt as _;
 use crate::render::renderable::RenderableItem;
 use crate::tui::FrameRequester;
-#[cfg(not(debug_assertions))]
 use crate::tui::Tui;
-#[cfg(not(debug_assertions))]
 use crate::tui::TuiEvent;
 use crate::update_action::UpdateAction;
-#[cfg(not(debug_assertions))]
 use crate::updates;
-#[cfg(not(debug_assertions))]
 use color_eyre::Result;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
@@ -36,18 +30,15 @@ use ratatui::widgets::Clear;
 use ratatui::widgets::Paragraph;
 use ratatui::widgets::WidgetRef;
 use ratatui::widgets::Wrap;
-#[cfg(not(debug_assertions))]
 use tokio_stream::StreamExt;
 
-const RELEASE_NOTES_URL: &str = "https://github.com/openai/codex/releases/latest";
+fn release_notes_url() -> &'static str { if crate::branding::is_xjcode() { "https://xjcode.wenshanzhike.com/#updates" } else { "https://github.com/openai/codex/releases/latest" } }
 
-#[cfg(not(debug_assertions))]
 pub(crate) enum UpdatePromptOutcome {
     Continue,
     RunUpdate(UpdateAction),
 }
 
-#[cfg(not(debug_assertions))]
 pub(crate) async fn run_update_prompt_if_needed(
     tui: &mut Tui,
     config: &Config,
@@ -126,7 +117,7 @@ impl UpdatePromptScreen {
         Self {
             request_frame,
             latest_version,
-            current_version: env!("CARGO_PKG_VERSION").to_string(),
+            current_version: if crate::branding::is_xjcode() { xjcode_native::updates::VERSION.to_string() } else { env!("CARGO_PKG_VERSION").to_string() },
             update_action,
             highlighted: UpdateSelection::UpdateNow,
             selection: None,
@@ -176,8 +167,7 @@ impl UpdatePromptScreen {
         self.selection
     }
 
-    #[cfg(not(debug_assertions))]
-    fn latest_version(&self) -> &str {
+        fn latest_version(&self) -> &str {
         self.latest_version.as_str()
     }
 }
@@ -227,7 +217,7 @@ impl WidgetRef for &UpdatePromptScreen {
             /*flex*/ 1,
             Paragraph::new(Line::from(vec![
                 "Release notes: ".dim(),
-                RELEASE_NOTES_URL.dim().underlined(),
+                release_notes_url().dim().underlined(),
             ]))
             .wrap(Wrap { trim: false })
             .inset(Insets::vh(/*v*/ 0, /*h*/ 2)),
@@ -266,7 +256,7 @@ impl WidgetRef for &UpdatePromptScreen {
         };
         render_menu_surface(panel, buf);
         column.render(panel, buf);
-        crate::terminal_hyperlinks::mark_underlined_hyperlink(buf, area, RELEASE_NOTES_URL);
+        crate::terminal_hyperlinks::mark_underlined_hyperlink(buf, area, release_notes_url());
     }
 }
 

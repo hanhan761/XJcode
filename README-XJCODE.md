@@ -9,7 +9,7 @@ XJCode 是基于 OpenAI Codex 源码的本地编程命令行工具，使用西�
 已有 Node.js 22 或以上：直接用 npm 安装 .tgz 文件或网站提供的 tarball URL。安装命令：
 
 ~~~powershell
-npm install -g https://xjcode.wenshanzhike.com/releases/0.1.4/xjcode-0.1.4.tgz
+npm install -g https://xjcode.wenshanzhike.com/releases/0.1.5/xjcode-0.1.5.tgz
 xjcode login
 cd D:\your-project
 xjcode
@@ -75,7 +75,7 @@ xjcode logout
 .\scripts\build-xjcode.ps1 -Profile release
 ```
 
-脚本识别 Visual Studio，使用锁文件构建引擎、登录器和 Windows 沙箱辅助程序，运行交晓智针对性测试，生成 `dist\xjcode-0.1.4-windows-x64-<profile>.zip`。包内附 SHA256 校验清单，安装前核验。源码下载如需代理，请仅在本机配置 Cargo/Git；不要把代理凭据提交到仓库。
+脚本识别 Visual Studio，使用锁文件构建引擎、登录器和 Windows 沙箱辅助程序，运行交晓智针对性测试，生成 `dist\xjcode-0.1.5-windows-x64-<profile>.zip`。包内附 SHA256 校验清单，安装前核验。源码下载如需代理，请仅在本机配置 Cargo/Git；不要把代理凭据提交到仓库。
 
 模块职责：
 
@@ -124,3 +124,19 @@ xjcode logout
 - 模型目录变化：运行 `xjcode models --refresh`；默认模型已下线时运行 `xjcode login` 重新选择。
 - XJCode 的项目配置使用 `.xjcode/config.toml`。从用户主目录启动时，不再将已有的 `.codex/config.toml` 作为项目配置覆盖交晓智模型设置。
 - 模型范围：模型列表只使用从交晓智同步的授权目录；启动、切换、审查及子任务选择均校验目录中的准确名称。自定义目录不能替换此列表，缺失目录时停止，不回退到其他平台的内置模型或缓存。恢复旧会话沿用当前授权模型，禁用其他后端的自动模型回退。默认模型保留用户当前选择，可以手动切换到目录中的其他交晓智模型。
+
+## 0.1.5：备用 API、更新与卸载
+
+校园登录仍使用 `xjcode login`。备用入口运行 `xjcode login --api`，填写 HTTPS API 基础地址、模型和协议（responses/chat），隐藏输入自己的 Token。Token 使用 Windows DPAPI 加密保存在本机；无需校园登录。Chat 接口复用 XJCode 结构化工具协议，完整接收并校验后才执行工具。支持图片的自定义模型需在配置时加 `--images`，默认上下文预算 32768。
+
+运行 `xjcode provider --select` 手动切换入口，之后重开会话。不会因校园请求失败而自动切换到付费 API。
+
+- `xjcode update`：从官网检查、校验并更新。
+- `xjcode update --check`：只检查新版。交互启动异步检查，24 小时缓存，可忽略当前版本；不增加常驻服务。
+- `xjcode uninstall`：确认后卸载，默认保留登录、配置和会话。
+- `xjcode uninstall --purge`：明确确认后清除 XJCode 个人数据。
+- 卸载也可从 Windows「已安装的应用」进入；不删除其他 Node、npm、Codex 或用户项目。其他运行实例须先关闭。
+
+npm 安装更新会先暂存并验证，再切换包目录，保留一份可识别的旧包供故障恢复。Windows 卸载需要等当前程序退出，结果位置由命令输出；不会终止其他会话。缺少安装归属记录的便携版或旧安装，请先运行一次官网新版安装器迁移。0.1.4 没有 update 命令，需要先重新运行一键安装。
+
+自动化配置可使用 `xjcode login --api --base-url https://example.org/v1 --model model-id --wire-api responses --key-stdin`，从标准输入提供 Token；不要将密钥放在命令参数中。

@@ -1,8 +1,8 @@
 # XJCode
 
-> 当前官网版本：0.1.3。安装脚本、npm 包和离线安装器均已同步。
+> 当前官网版本：0.1.5。安装脚本、npm 包和离线安装器均已同步。
 
-面向 Windows PowerShell 的交晓智编程工具。使用校园账号登录，在项目里理解代码、修改文件并运行测试。
+面向 Windows PowerShell 的交晓智编程工具。支持校园账号登录，也可配置自己的兼容 API，在项目里理解代码、修改文件并运行测试。
 
 <p align="center">
   <img src="docs/xjcode/xjcode-hero-apple-style.png" alt="XJCode 项目介绍图" width="100%" />
@@ -21,7 +21,7 @@ irm https://xjcode.wenshanzhike.com/install.ps1 | iex
 已有 Node.js 22+：
 
 ```powershell
-npm install -g https://xjcode.wenshanzhike.com/releases/0.1.3/xjcode-0.1.3.tgz
+npm install -g https://xjcode.wenshanzhike.com/releases/0.1.5/xjcode-0.1.5.tgz
 ```
 
 也可以从网站下载单文件安装器，双击安装。下载由国内自有服务器提供，无需通过 GitHub 或 npm 官方仓库。支持 Windows x64，校园登录需要 WebView2 和有效校园账号。

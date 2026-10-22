@@ -1,4 +1,3 @@
-#![cfg(not(debug_assertions))]
 
 use crate::legacy_core::config::Config;
 use crate::npm_registry;
@@ -25,6 +24,7 @@ use crate::version::CODEX_CLI_VERSION;
 pub(crate) use crate::updates_cache::dismiss_version;
 
 pub fn get_upgrade_version(config: &Config) -> Option<String> {
+    if crate::branding::is_xjcode() { return xjcode_native::updates::cached_notice(config.codex_home.as_path()); }
     if !config.check_for_update_on_startup || is_source_build_version(CODEX_CLI_VERSION) {
         return None;
     }
@@ -82,7 +82,7 @@ async fn check_for_update(
     )
     .with_legacy_custom_ca_fallback();
     let latest_version = match action {
-        Some(UpdateAction::Daemon(_)) => return Ok(()),
+        Some(UpdateAction::Xjcode) | Some(UpdateAction::Daemon(_)) => return Ok(()),
         Some(UpdateAction::BrewUpgrade) => {
             let HomebrewCaskInfo { version } = client_pool
                 .get(HOMEBREW_CASK_API_URL)
@@ -150,6 +150,7 @@ async fn fetch_latest_github_release_version(
 /// Returns the latest version to show in a popup, if it should be shown.
 /// This respects the user's dismissal choice for the current latest version.
 pub fn get_upgrade_version_for_popup(config: &Config) -> Option<String> {
+    if crate::branding::is_xjcode() { return xjcode_native::updates::cached_notice(config.codex_home.as_path()); }
     if !config.check_for_update_on_startup || is_source_build_version(CODEX_CLI_VERSION) {
         return None;
     }

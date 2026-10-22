@@ -4827,6 +4827,7 @@ dependencies = [
 name = "codex-tui"
 version = "0.0.0"
 dependencies = [
+ "xjcode-native",
  "anyhow",
  "app_test_support",
  "arboard",
@@ -17735,7 +17736,7 @@ dependencies = [
 
 [[package]]
 name = "xjcode-native"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "aes",
  "anyhow",

@@ -29,6 +29,7 @@ pub(crate) fn read_version_info(version_file: &Path) -> anyhow::Result<VersionIn
 /// Persist a dismissal for the current latest version so we don't show
 /// the update popup again for this version.
 pub(crate) async fn dismiss_version(config: &Config, version: &str) -> anyhow::Result<()> {
+    if crate::branding::is_xjcode() { return xjcode_native::updates::dismiss(config.codex_home.as_path(),version); }
     let version_file = version_filepath(config);
     let mut info = match read_version_info(&version_file) {
         Ok(info) => info,

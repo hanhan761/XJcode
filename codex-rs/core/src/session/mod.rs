@@ -747,14 +747,14 @@ impl Session {
                 config.http_client_factory(),
             )
             .await;
-        if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some()
+        if std::env::var_os("XJCODE_MODE").is_some()
             && !config
                 .model_catalog
                 .as_ref()
                 .is_some_and(|catalog| catalog.models.iter().any(|item| item.slug == model))
         {
             return Err(CodexErr::InvalidRequest(
-                "所选模型不在交晓智授权目录，请从交晓智模型列表重新选择。".to_string(),
+                "所选模型不在当前服务模型目录，请从交晓智模型列表重新选择。".to_string(),
             ));
         }
         if model.trim().is_empty() {

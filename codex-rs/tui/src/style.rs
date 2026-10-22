@@ -85,7 +85,7 @@ pub(crate) fn table_separator_style() -> Style {
 
 /// Returns the shared accent style for active or selected TUI controls.
 pub(crate) fn accent_style() -> Style {
-    if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+    if std::env::var_os("XJCODE_MODE").is_some() {
         return accent_style_for(default_bg());
     }
     if matches!(
@@ -229,7 +229,7 @@ pub(crate) fn accent_style_for(terminal_bg: Option<(u8, u8, u8)>) -> Style {
 }
 
 fn accent_color_for(terminal_bg: Option<(u8, u8, u8)>) -> Color {
-    if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+    if std::env::var_os("XJCODE_MODE").is_some() {
         let preferred = if terminal_bg.is_some_and(is_light) {
             (0, 112, 104)
         } else {

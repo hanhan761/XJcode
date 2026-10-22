@@ -3947,17 +3947,12 @@ impl Config {
             .clone()
             .filter(|value| !value.is_empty());
 
-        let xjcode_mode = std::env::var_os("XJCODE_PROVIDER_LOCK").is_some();
+        let xjcode_mode = std::env::var_os("XJCODE_MODE").is_some();
         let model_providers = if xjcode_mode {
-            // The campus application has one transport. Do not expose bundled
-            // providers or let project/CLI configuration replace that transport.
-            let provider = serde_json::from_value(serde_json::json!({
-                "name": "交晓智", "wire_api": "xjtu_top",
-                "base_url": xjcode_native::api::ENDPOINT,
-                "requires_openai_auth": false,
-                "request_max_retries": 0, "stream_max_retries": 0
-            })).map_err(std::io::Error::other)?;
-            HashMap::from([("xjtu".to_string(), provider)])
+            let home = xjcode_native::auth::home().map_err(std::io::Error::other)?;
+            let (id, value) = xjcode_native::provider::selected_info(&home).map_err(std::io::Error::other)?;
+            let provider = serde_json::from_value(value).map_err(std::io::Error::other)?;
+            HashMap::from([(id, provider)])
         } else {
             merge_configured_model_providers(built_in_model_providers(openai_base_url), cfg.model_providers)
                 .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))?
@@ -3967,10 +3962,10 @@ impl Config {
             .or(model_provider)
             .or(cfg.model_provider)
             .unwrap_or_else(|| if xjcode_mode { "xjtu" } else { "openai" }.to_string());
-        if xjcode_mode && model_provider_id != "xjtu" {
+        if xjcode_mode && !model_providers.contains_key(&model_provider_id) {
             return Err(std::io::Error::new(
                 ErrorKind::InvalidInput,
-                "XJCode 只支持交晓智平台，不能切换到其他模型服务。",
+                "请运行 xjcode provider --select 选择模型服务，不接受项目或命令行替换服务。",
             ));
         }
         let model_provider = model_providers
@@ -4237,28 +4232,23 @@ impl Config {
 
         let check_for_update_on_startup = cfg.check_for_update_on_startup.unwrap_or(true);
         let (model, model_catalog) = if xjcode_mode {
-            // Only the catalog synchronized from XJTU is authoritative. Ignore
-            // alternate catalog files rather than merging with bundled models.
+            // Only the explicitly selected user provider supplies its catalog.
+            // Project catalogs and bundled upstream models cannot extend it.
             let home = xjcode_native::auth::home().map_err(std::io::Error::other)?;
-            let settings = xjcode_native::setup::load(&home).map_err(std::io::Error::other)?;
-            let authorized = |name: &str| settings.models.iter().any(|item| item.name == name);
-            if settings.models.is_empty() || !authorized(&settings.model) {
-                return Err(std::io::Error::new(
-                    ErrorKind::InvalidInput,
-                    "交晓智授权模型目录不可用，请运行 xjcode login 重新配置。",
-                ));
-            }
+            let (default_model, value) = if xjcode_native::provider::is_custom(&home).map_err(std::io::Error::other)? {
+                let profile=xjcode_native::provider::load(&home).map_err(std::io::Error::other)?;
+                (profile.model.clone(),profile.catalog())
+            } else {
+                let settings=xjcode_native::setup::load(&home).map_err(std::io::Error::other)?;
+                (settings.model.clone(),xjcode_native::setup::catalog(&settings))
+            };
+            let authorized=|name:&str|value["models"].as_array().is_some_and(|items|items.iter().any(|item|item["slug"]==name));
+            if !authorized(&default_model) {return Err(std::io::Error::new(ErrorKind::InvalidInput,"当前服务模型目录不可用，请重新配置。"));}
             for selected in [model.as_deref(), review_model.as_deref(), agent_default_subagent_model.as_deref()].into_iter().flatten() {
-                if !authorized(selected) {
-                    return Err(std::io::Error::new(
-                        ErrorKind::InvalidInput,
-                        "所选模型不在交晓智授权目录，请运行 xjcode models 查看可选模型。",
-                    ));
-                }
+                if !authorized(selected) {return Err(std::io::Error::new(ErrorKind::InvalidInput,"所选模型不在当前服务模型目录，请运行 xjcode models 查看。"));}
             }
-            let catalog = serde_json::from_value(xjcode_native::setup::catalog(&settings))
-                .map_err(std::io::Error::other)?;
-            (model.or(Some(settings.model)), Some(catalog))
+            let catalog=serde_json::from_value(value).map_err(std::io::Error::other)?;
+            (model.or(Some(default_model)),Some(catalog))
         } else {
             (model, load_model_catalog(cfg.model_catalog_json.clone())?)
         };

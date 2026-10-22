@@ -8,6 +8,8 @@ use codex_install_context::StandalonePlatform;
 /// Update action the CLI should perform after the TUI exits.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UpdateAction {
+    /// Update the first-party XJCode installation.
+    Xjcode,
     /// Replace the local daemon after restoring the terminal.
     Daemon(DaemonUpdateSource),
     /// Update via `npm install -g @openai/codex@latest`.
@@ -46,6 +48,7 @@ impl UpdateAction {
     /// Returns the list of command-line arguments for invoking the update.
     pub fn command_args(self) -> (&'static str, &'static [&'static str]) {
         match self {
+            UpdateAction::Xjcode => ("xjcode", &["update"]),
             UpdateAction::Daemon(source) => ("codex", source.command_args()),
             UpdateAction::NpmGlobalLatest => ("npm", &["install", "-g", "@openai/codex"]),
             UpdateAction::BunGlobalLatest => ("bun", &["install", "-g", "@openai/codex"]),
@@ -79,9 +82,10 @@ impl UpdateAction {
     }
 }
 
-#[cfg(not(debug_assertions))]
 pub fn get_update_action() -> Option<UpdateAction> {
-    UpdateAction::from_install_context(InstallContext::current())
+    if crate::branding::is_xjcode() { return Some(UpdateAction::Xjcode); }
+    #[cfg(not(debug_assertions))] { UpdateAction::from_install_context(InstallContext::current()) }
+    #[cfg(debug_assertions)] { None }
 }
 
 #[cfg(test)]

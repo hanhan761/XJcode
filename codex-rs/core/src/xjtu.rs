@@ -92,6 +92,13 @@ pub(crate) async fn stream(
     tokio::spawn(async move {
         let work = async {
             let home = auth::home()?;
+            if xjcode_native::provider::is_custom(&home)? {
+                let profile=xjcode_native::provider::load(&home)?;
+                anyhow::ensure!(profile.wire_api=="chat" && profile.model==model_name,"API 入口或模型已变更，请重新启动 XJCode");
+                let raw=xjcode_native::provider::chat(&profile,&prepared.text,&prepared.images).await?;
+                let reply=parse_reply(&raw,&tools,&history,schema.as_ref(),compaction)?;
+                return events(reply,&tools);
+            }
             let settings = setup::load(&home)?;
             let credentials = auth::load_at(&home)?;
             anyhow::ensure!(

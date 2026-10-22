@@ -8,3 +8,6 @@ pub mod images;
 pub mod ipc;
 pub mod protocol;
 pub mod setup;
+pub mod provider;
+pub mod updates;
+pub mod lifecycle;

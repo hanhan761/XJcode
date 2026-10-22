@@ -90,6 +90,14 @@ pub fn home() -> Result<PathBuf> {
             .join(".xjcode"),
     )
 }
+pub fn mark_home(home: &Path) -> Result<()> {
+    ensure!(home.is_absolute(),"XJCODE_HOME 必须是绝对路径");
+    let profile=std::env::var_os("USERPROFILE").map(PathBuf::from);
+    ensure!(home.parent().is_some() && profile.as_deref()!=Some(home) && !home.components().any(|c|c.as_os_str()==".codex"),"请使用独立的 XJCode 数据目录");
+    let may_own=!home.exists() || std::fs::read_dir(home)?.next().is_none() || home.file_name().is_some_and(|n|n==".xjcode");
+    if may_own {atomic_write(&home.join(".xjcode-data-owner"),b"XJCode data v1")?;}
+    Ok(())
+}
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
     let dir = path.parent().context("无效保存路径")?;
     std::fs::create_dir_all(dir)?;
@@ -101,6 +109,7 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 pub fn save_at(home: &Path, c: &Credentials) -> Result<()> {
+    mark_home(home)?;
     c.validate()?;
     let mut plain = serde_json::to_vec(c)?;
     let protected = protect(&plain);
@@ -176,19 +185,19 @@ fn crypt(data: &[u8], decrypt: bool) -> Result<Vec<u8>> {
     Ok(out)
 }
 #[cfg(windows)]
-fn protect(data: &[u8]) -> Result<Vec<u8>> {
+pub(crate) fn protect(data: &[u8]) -> Result<Vec<u8>> {
     crypt(data, false)
 }
 #[cfg(windows)]
-fn unprotect(data: &[u8]) -> Result<Vec<u8>> {
+pub(crate) fn unprotect(data: &[u8]) -> Result<Vec<u8>> {
     crypt(data, true)
 }
 #[cfg(not(windows))]
-fn protect(_: &[u8]) -> Result<Vec<u8>> {
+pub(crate) fn protect(_: &[u8]) -> Result<Vec<u8>> {
     anyhow::bail!("XJCode 凭据存储仅支持 Windows")
 }
 #[cfg(not(windows))]
-fn unprotect(_: &[u8]) -> Result<Vec<u8>> {
+pub(crate) fn unprotect(_: &[u8]) -> Result<Vec<u8>> {
     anyhow::bail!("XJCode 凭据存储仅支持 Windows")
 }
 

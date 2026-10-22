@@ -39,7 +39,7 @@ impl ChatWidget {
         let mut config = config;
         config.model = model.clone();
         let prevent_idle_sleep = config.features.enabled(Feature::PreventIdleSleep);
-        let placeholder = if std::env::var_os("XJCODE_PROVIDER_LOCK").is_some() {
+        let placeholder = if std::env::var_os("XJCODE_MODE").is_some() {
             "描述你的需求，让 XJCode 帮你完成…"
         } else {
             PLACEHOLDER
