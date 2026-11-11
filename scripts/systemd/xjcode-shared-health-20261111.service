@@ -1,0 +1,5 @@
+[Unit]
+Description=Publish shared model health summary to XJCode site
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/codex-admin/services/yun-website-origin/releases/xjcode-health-bridge-20261111/bridge.py

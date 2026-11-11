@@ -40,7 +40,7 @@ async fn run() -> Result<()> {
         }
         "--help" | "-h" | "help" => {
             println!(
-                "XJCode — 支持交晓智与自定义 API 的本地编程工具\n\nxjcode login [--force]     西交登录，自动配置凭据\nxjcode login --api         配置自己的 API / Token\nxjcode provider --select   切换校园与备用 API\nxjcode update [--check]    检查并更新 XJCode\nxjcode uninstall [--purge] 卸载（默认保留个人数据）\nxjcode login status        登录状态\nxjcode logout              清除本机凭据\nxjcode models [--refresh]  列出授权模型\nxjcode models --select    选择默认模型\nxjcode doctor [--probe] [-m 模型]  环境诊断（--probe 会调用一次指定模型）\nxjcode                    交互编程\nxjcode exec \"任务\"         单次任务\nxjcode resume             恢复会话\nxjcode mcp                管理本地 MCP 扩展（会话内使用 /skills）\n\n命令详情：xjcode exec --help。默认上下文预算 32768 tokens，可在 config.toml 中调整。"
+                "XJCode — 支持交晓智与自定义 API 的本地编程工具\n\nxjcode login [--force]     西交登录，自动配置凭据\nxjcode login --api         配置自己的 API / Token\nxjcode provider --select   切换校园与备用 API\nxjcode update [--check]    检查并更新 XJCode\nxjcode uninstall [--purge] 卸载（默认保留个人数据）\nxjcode login status        登录状态\nxjcode logout              清除本机凭据\nxjcode models [--refresh]  列出授权模型\nxjcode models --select    选择默认模型\nxjcode doctor [--probe] [-m 模型]  环境诊断（--probe 会调用一次指定模型）\nxjcode diagnostics         查看脱敏错误摘要（仅本机）\nxjcode                    交互编程\nxjcode exec \"任务\"         单次任务\nxjcode resume             恢复会话\nxjcode mcp                管理本地 MCP 扩展（会话内使用 /skills）\n\n命令详情：xjcode exec --help。默认上下文预算 32768 tokens，可在 config.toml 中调整。"
             );
             return Ok(());
         }
@@ -132,49 +132,42 @@ async fn run() -> Result<()> {
             return Ok(());
         }
         "models" => {
+            ensure!(args.iter().skip(1).all(|a| a == "--refresh" || a == "--select"), "用法：xjcode models [--refresh] [--select]");
+            let refresh = args.iter().any(|a| a == "--refresh");
+            let choose = args.iter().any(|a| a == "--select");
             let mut settings = setup::load(&home)?;
-            if args.iter().any(|a| a == "--refresh") {
-                // TUI selection updates config.toml independently of the login
-                // snapshot. Refresh capabilities without restoring an old model.
-                settings.model =
-                    xjcode_native::doctor::Options::default().model_name(&home, &settings)?;
+            if refresh {
+                // Keep the user's current engine choice; checking does not choose a replacement.
+                settings.model = xjcode_native::doctor::Options::default().model_name(&home, &settings)?;
                 let c = auth::load_at(&home)?;
                 ensure!(c.account_id == settings.account_id, "账号不一致");
-                settings.models = TopClient::new(c)?.models(&settings.workspace_id).await?;
-                ensure!(!settings.models.is_empty(), "没有可用模型");
-                if !settings.models.iter().any(|m| m.name == settings.model) {
-                    bail!("默认模型已不可用，请重新运行 xjcode login 选择模型");
+                let models = TopClient::new(c)?.models(&settings.workspace_id).await?;
+                ensure!(!models.is_empty(), "上游目录为空或暂不可用；原模型配置未更改");
+                let changes = xjcode_native::catalog_watch::compare(&settings.models, &models);
+                println!("目录变化：新增 {}、移除 {}、配置变更 {}。", changes.added, changes.removed, changes.altered);
+                if !models.iter().any(|m| m.name == settings.model) && !choose {
+                    bail!("当前模型不在最新授权目录；原配置未更改。请运行 xjcode models --refresh --select 选择模型");
                 }
-                setup::save(&home, &settings)?;
+                settings.models = models;
             }
-            if args.iter().any(|a| a == "--select") {
-                let labels = settings
-                    .models
-                    .iter()
-                    .map(|m| m.name.clone())
-                    .collect::<Vec<_>>();
+            if choose {
+                let labels = settings.models.iter().map(|m| m.name.clone()).collect::<Vec<_>>();
                 settings.model = settings.models[select("模型", &labels)?].name.clone();
-                setup::save(&home, &settings)?;
             }
+            if refresh || choose { setup::save(&home, &settings)?; }
+            if refresh { xjcode_native::catalog_watch::remember(&home, &settings); }
             xjcode_native::capabilities::apply(&home, &mut settings);
             for model in settings.models {
-                println!(
-                    "{} {}{}",
-                    if model.name == settings.model {
-                        "*"
-                    } else {
-                        " "
-                    },
-                    model.name,
-                    if model.verified_image_input {
-                        "  [图片]"
-                    } else if model.platform_supports_images() {
-                        "  [图片·平台声明]"
-                    } else {
-                        ""
-                    }
-                );
+                println!("{} {}{}", if model.name == settings.model { "*" } else { " " }, model.name,
+                    if model.verified_image_input { "  [图片]" } else if model.platform_supports_images() { "  [图片·平台声明]" } else { "" });
             }
+            return Ok(());
+        }
+        "diagnostics" => {
+            ensure!(args.len() == 1, "用法：xjcode diagnostics");
+            let records = xjcode_native::support::recent(&home);
+            if records.is_empty() { println!("暂无可用的本机诊断记录。"); }
+            else { println!("近期诊断摘要（仅本机，不包含对话和密钥）："); for record in records { println!("{record}"); } }
             return Ok(());
         }
         "doctor" => {
@@ -227,7 +220,13 @@ async fn run() -> Result<()> {
             settings.account_id == c.account_id,
             "账号不一致，请重新登录"
         );
-
+        if matches!(first, "" | "exec" | "resume" | "fork") {
+            let mut current = settings.clone();
+            if let Ok(model) = xjcode_native::doctor::Options::default().model_name(&home, &settings) { current.model = model; }
+            if let Some(message) = xjcode_native::catalog_watch::check(&home, c, &current).await {
+                eprintln!("XJCode：{message}");
+            }
+        }
     }
     #[cfg(windows)]
     if !is_help { configure_python_environment(&mut cmd); }

@@ -1,0 +1,8 @@
+[Unit]
+Description=Refresh XJCode shared model health every five minutes
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Unit=xjcode-shared-health-20261111.service
+[Install]
+WantedBy=timers.target
