@@ -1,6 +1,6 @@
 param(
  [string]$BundleRoot=$PSScriptRoot,
- [string]$BaseUrl='https://xjcode.wenshanzhike.com/releases/0.1.7/',
+ [string]$BaseUrl='https://xjcode.wenshanzhike.com/releases/0.1.8/',
  [string]$InstallRoot=(Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'XJCode'),
  [switch]$NoPath,
  [switch]$UsePrivateNode

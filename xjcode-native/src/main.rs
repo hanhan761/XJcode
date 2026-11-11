@@ -225,6 +225,7 @@ async fn run() -> Result<()> {
             if let Ok(model) = xjcode_native::doctor::Options::default().model_name(&home, &settings) { current.model = model; }
             if let Some(message) = xjcode_native::catalog_watch::check(&home, c, &current).await {
                 eprintln!("XJCode：{message}");
+                cmd.env("XJCODE_CATALOG_NOTICE", &message);
             }
         }
     }

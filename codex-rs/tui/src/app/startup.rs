@@ -869,6 +869,17 @@ impl App {
                 history_cell::StartupWarningsCell::new(vec![warning]),
             )));
         }
+        // Display XJCode account-specific catalog warnings inside the TUI; stderr
+        // emitted before entering the alternate screen would otherwise be missed.
+        if crate::branding::is_xjcode() {
+            if let Ok(notice) = std::env::var("XJCODE_CATALOG_NOTICE") {
+                if !notice.is_empty() && notice.len() <= 2048 && !notice.chars().any(char::is_control) {
+                    app_event_tx.send(AppEvent::InsertHistoryCell(Box::new(
+                        history_cell::new_usage_warning_event(notice),
+                    )));
+                }
+            }
+        }
         let file_search = FileSearchManager::new(config.cwd.to_path_buf(), app_event_tx.clone());
         let runtime_keymap =
             RuntimeKeymap::from_config(&local_settings.tui.keymap).map_err(|err| {
