@@ -365,11 +365,17 @@ pub async fn chat(
         .send()
         .await
         .map_err(|_| anyhow::anyhow!("API 连接失败或超时；该轮工具未执行"))?;
-    ensure!(
-        response.status().is_success(),
-        "API 返回 HTTP {}；请检查地址、Token 与模型",
-        response.status().as_u16()
-    );
+    let status = response.status();
+    if !status.is_success() {
+        let advice = match status.as_u16() {
+            401 => "API 凭据无效或已过期，请检查 Token",
+            403 => "API 访问权限不足，请检查模型授权",
+            429 => "API 请求受到限流，请稍后再试",
+            500..=599 => "上游不可用：当前模型的 API 服务返回服务器错误，请稍后重试或切换模型",
+            _ => "请检查 API 地址、模型和请求配置",
+        };
+        bail!("API 返回 HTTP {}；{}；该轮工具未执行", status.as_u16(), advice);
+    }
     let mut stream = response.bytes_stream().eventsource();
     let mut text = String::new();
     let mut finished = false;

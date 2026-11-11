@@ -62,3 +62,21 @@ async fn interrupted_error_and_truncated_streams_never_return_partial_tools() {
         server.await.unwrap();
     }
 }
+
+#[tokio::test]
+async fn http_status_reports_upstream_without_confusing_credentials_or_rate_limits() {
+    for (status, expected, unavailable) in [
+        ("503 Service Unavailable", "上游不可用", true),
+        ("401 Unauthorized", "凭据", false),
+        ("403 Forbidden", "权限", false),
+        ("429 Too Many Requests", "限流", false),
+    ] {
+        let (profile, server) = fixture("private server data".into(), status).await;
+        let error = chat(&profile, "private task", &[]).await.unwrap_err().to_string();
+        assert!(error.contains(expected), "{error}");
+        assert_eq!(error.contains("上游不可用"), unavailable);
+        assert!(!error.contains("private server data"));
+        assert!(!error.contains("mock-test-token"));
+        server.await.unwrap();
+    }
+}

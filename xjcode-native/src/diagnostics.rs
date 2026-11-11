@@ -347,7 +347,8 @@ impl RequestFailure {
                 Some(seconds) => format!("请求受到限流，服务端建议至少等待 {seconds} 秒后再试"),
                 None => "请求受到限流，请稍后再试".into(),
             },
-            Some(500..=599) => "模型服务返回异常，不能据此判断登录失效。可先运行 xjcode doctor --probe 检查短调用；若短调用正常而原会话失败，再压缩会话或手动切换授权模型".into(),
+            Some(500..=599) if self.action == "Chat" => "上游不可用：当前模型的 Chat 服务返回服务器错误。请稍后重试，或用 /model 切换其他授权模型；不能据此判断登录失效".into(),
+            Some(500..=599) => "交晓智上游服务暂时不可用；当前失败环节不是模型 Chat，不能据此判断所选模型不可用。请稍后重试或运行 xjcode doctor 检查".into(),
             Some(300..=399) => "服务返回重定向，客户端未跟随，请核对校园服务入口".into(),
             Some(_) => "请求被服务端拒绝，请结合错误码核对模型和请求内容".into(),
             None if self.kind == "timeout" && self.action == "BatchCreateMessages" => "写入上下文消息超时，尚未取得写入确认；本次尚未发起 Chat，不能据此判断模型能力或上下文已满。消息可能已被平台接收，请勿自动重发".into(),
@@ -475,13 +476,31 @@ mod tests {
         for status in [500, 502, 503, 504] {
             let text = failure(status).error(None).to_string();
             assert!(text.contains(&format!("HTTP {status}")));
-            assert!(text.contains("doctor --probe"));
+            assert!(text.contains("上游不可用"));
+            assert!(text.contains("/model"));
             assert!(text.contains("输入=12345"));
             let advice = text.lines().next().unwrap();
             for misleading in ["401", "403", "429", "login --force"] {
                 assert!(!advice.contains(misleading));
             }
         }
+    }
+    #[test]
+    fn only_chat_server_errors_are_attributed_to_the_model() {
+        let mut f = failure(503);
+        f.action = "CreateConversation".into();
+        let text = f.error(None).to_string();
+        assert!(text.contains("上游服务暂时不可用"));
+        assert!(text.contains("不能据此判断所选模型不可用"));
+        assert!(!text.contains("上游不可用：当前模型"));
+        f.action = "Chat".into();
+        for status in [401, 403, 413, 429] {
+            f.http_status = Some(status);
+            assert!(!f.error(None).to_string().contains("上游不可用"));
+        }
+        f.http_status = None;
+        f.kind = "connect";
+        assert!(!f.error(None).to_string().contains("上游不可用"));
     }
     #[test]
     fn status_advice_and_retry_after_are_specific() {

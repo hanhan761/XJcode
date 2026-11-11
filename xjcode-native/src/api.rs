@@ -1012,6 +1012,7 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(error.contains("HTTP 500"), "{error}");
+        assert!(error.contains("上游不可用：当前模型"), "{error}");
         assert!(error.contains("request-header-123"));
         assert!(error.contains("输入=80000"));
         assert!(!error.contains("login --force"));
