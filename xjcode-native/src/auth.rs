@@ -274,4 +274,19 @@ mod tests {
         assert!(load_at(dir.path()).is_err());
         logout_at(dir.path()).unwrap();
     }
+    #[cfg(windows)]
+    #[test]
+    fn campus_session_is_encrypted_and_round_trips() {
+        let dir = tempfile::tempdir().unwrap();
+        let c = Credentials { access_key: WEB_SESSION.into(), secret: serde_json::to_string(&WebSession { iam_cookie:"session=iam-test-secret".into(), aigw_cookie:"session=aigw-test-secret".into(), csrf:"csrf-test-secret".into() }).unwrap(), account_id:"fixture-account".into() };
+        save_at(dir.path(), &c).unwrap();
+        let raw = std::fs::read(dir.path().join("credentials.dpapi")).unwrap();
+        assert!(!String::from_utf8_lossy(&raw).contains("test-secret"));
+        let restored = load_at(dir.path()).unwrap();
+        let session=restored.web_session().unwrap().unwrap();
+        assert_eq!(session.iam_cookie,"session=iam-test-secret");
+        assert_eq!(session.aigw_cookie,"session=aigw-test-secret");
+        assert_eq!(session.csrf,"csrf-test-secret");
+    }
+
 }
