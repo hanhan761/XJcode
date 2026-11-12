@@ -13,6 +13,7 @@ pub enum SlashCommand {
     // DO NOT ALPHA-SORT! Enum order is presentation order in the popup, so
     // more frequently used commands should be listed first.
     Model,
+    Formula,
     Presets,
     Daybreak,
     Ide,
@@ -103,6 +104,7 @@ impl SlashCommand {
             }
         }
         match self {
+            SlashCommand::Formula => "离线编辑公式，预览并复制回输入框",
             SlashCommand::Config => "configure Codex preferences",
             SlashCommand::Feedback => "send logs to maintainers",
             SlashCommand::New => "start a new chat during a conversation",
@@ -215,6 +217,7 @@ impl SlashCommand {
         matches!(
             self,
             SlashCommand::Copy
+                | SlashCommand::Formula
                 | SlashCommand::Agents
                 | SlashCommand::Export
                 | SlashCommand::Raw
@@ -240,6 +243,7 @@ impl SlashCommand {
         matches!(
             self,
             SlashCommand::New
+                | SlashCommand::Formula
                 | SlashCommand::Clear
                 | SlashCommand::Resume
                 | SlashCommand::Agents
@@ -282,6 +286,7 @@ impl SlashCommand {
             | SlashCommand::MemoryDrop
             | SlashCommand::MemoryUpdate => false,
             SlashCommand::Diff
+            | SlashCommand::Formula
             | SlashCommand::Archive
             | SlashCommand::Resume
             | SlashCommand::Model
@@ -326,6 +331,7 @@ impl SlashCommand {
 
     fn is_visible(self) -> bool {
         match self {
+            SlashCommand::Formula => crate::branding::is_xjcode(),
             SlashCommand::Copy => !cfg!(target_os = "android"),
             SlashCommand::App => cfg!(any(target_os = "macos", target_os = "windows")),
             SlashCommand::Voice => true,

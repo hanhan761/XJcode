@@ -57,9 +57,11 @@
       catch (error) { throw new Error(error.message === 'HTTP_403' ? 'KEY_LIST_FORBIDDEN' : 'KEY_LIST_FAILED'); }
       // The portal itself accepts a null Items field for an empty list.
       // Only treat it as empty when the reported total explicitly confirms zero.
-      if (!result || (!Array.isArray(result.Items) && !(result.Items == null && result.Total != null && Number(result.Total) === 0))) throw new Error('KEY_LIST_FORMAT');
-      if (result.Total != null && (!Number.isSafeInteger(Number(result.Total)) || Number(result.Total) < 0)) throw new Error('KEY_LIST_FORMAT');
+      const total = result?.Total;
+      const validTotal = total == null || ((typeof total === 'number' || (typeof total === 'string' && /^\d+$/.test(total))) && Number.isSafeInteger(Number(total)) && Number(total) >= 0);
+      if (!validTotal || !result || (!Array.isArray(result.Items) && !(result.Items == null && total != null && Number(total) === 0))) throw new Error('KEY_LIST_FORMAT');
       const keys = result.Items || [];
+      if (keys.some(key => !key || typeof key !== 'object' || Array.isArray(key)) || (total != null && Number(total) < keys.length)) throw new Error('KEY_LIST_FORMAT');
       let key = keys.filter(k => Number(k.Status) === 1 && k.SecretKey && k.AccessKey)
         .sort((a,b) => String(b.CreatedTime).localeCompare(String(a.CreatedTime)) || String(a.AccessKey).localeCompare(String(b.AccessKey)))[0];
       if (!key) {

@@ -221,6 +221,37 @@ impl ChatWidget {
                     enabled: !self.daybreak_enabled,
                 });
             }
+            SlashCommand::Formula => {
+                if !crate::branding::is_xjcode() {
+                    self.add_error_message("此命令仅用于 XJCode。".into());
+                    return;
+                }
+                let result = std::env::var_os("XJCODE_LAUNCHER_EXE")
+                    .ok_or_else(|| anyhow::anyhow!("缺少 XJCode 启动入口"))
+                    .and_then(|launcher| {
+                        let mut command = std::process::Command::new(launcher);
+                        command.arg("formula")
+                            .stdin(std::process::Stdio::null())
+                            .stdout(std::process::Stdio::null())
+                            .stderr(std::process::Stdio::null());
+                        #[cfg(windows)]
+                        {
+                            use std::os::windows::process::CommandExt;
+                            command.creation_flags(0x08000000);
+                        }
+                        let status = command.status()?;
+                        anyhow::ensure!(status.success(), "公式编辑器启动失败");
+                        Ok(())
+                    });
+                match result {
+                    Ok(()) => self.add_info_message(
+                        "公式编辑器已打开。复制公式后，粘贴回输入框。".into(), None,
+                    ),
+                    Err(_) => self.add_error_message(
+                        "公式编辑器无法打开。可在 PowerShell 运行 xjcode formula --no-open，再打开输出的 HTML 文件。".into(),
+                    ),
+                }
+            }
             SlashCommand::Feedback => {
                 if !self.config.feedback_enabled {
                     let params = crate::bottom_pane::feedback_disabled_params();
@@ -1303,6 +1334,7 @@ impl ChatWidget {
         }
         match cmd {
             SlashCommand::Ide
+            | SlashCommand::Formula
             | SlashCommand::Status
             | SlashCommand::Daemon
             | SlashCommand::Pwd

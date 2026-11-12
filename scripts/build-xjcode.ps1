@@ -5,6 +5,8 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
+& node.exe (Join-Path $PSScriptRoot 'build-xjcode-formula.mjs')
+if ($LASTEXITCODE -ne 0) { throw 'Offline formula editor generation failed.' }
 if (-not (Get-Command cargo.exe -ErrorAction SilentlyContinue)) { throw 'Install Rust (MSVC) and Rust toolchain 1.95.0 first.' }
 if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
     $vswhere = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Microsoft Visual Studio\Installer\vswhere.exe'
@@ -54,7 +56,7 @@ foreach ($binary in @('xjcode.exe', 'xjcode-login.exe')) {
     Copy-Item -LiteralPath (Join-Path $nativeTarget "$artifactProfile\$binary") -Destination $package -Force
 }
 foreach ($dll in Get-ChildItem -LiteralPath (Join-Path $nativeTarget $artifactProfile) -Filter '*.dll') { Copy-Item -LiteralPath $dll.FullName -Destination $package -Force }
-foreach ($doc in @('LICENSE', 'NOTICE', 'README-XJCODE.md')) { Copy-Item -LiteralPath (Join-Path $repo $doc) -Destination $package -Force }
+foreach ($doc in @('LICENSE', 'NOTICE', 'README-XJCODE.md', 'THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPath (Join-Path $repo $doc) -Destination $package -Force }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'install-xjcode.ps1') -Destination (Join-Path $package 'install.ps1') -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Install-XJCode.cmd') -Destination $package -Force
 $csc=Join-Path $env:SystemRoot 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'

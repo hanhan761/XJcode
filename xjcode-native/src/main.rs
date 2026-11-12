@@ -22,6 +22,9 @@ async fn run() -> Result<()> {
     let args: Vec<OsString> = std::env::args_os().skip(1).collect();
     let first = args.first().and_then(|a| a.to_str()).unwrap_or("");
     let home = auth::home()?;
+    if first == "formula" {
+        return xjcode_native::formula::run(&home, &args[1..]);
+    }
     if first == "update" {
         return xjcode_native::lifecycle::update(&home, &args[1..]).await;
     }
@@ -40,7 +43,7 @@ async fn run() -> Result<()> {
         }
         "--help" | "-h" | "help" => {
             println!(
-                "XJCode — 支持交晓智与自定义 API 的本地编程工具\n\nxjcode login [--force]     西交登录，自动配置凭据\nxjcode login --api         配置自己的 API / Token\nxjcode provider --select   切换校园与备用 API\nxjcode update [--check]    检查并更新 XJCode\nxjcode uninstall [--purge] 卸载（默认保留个人数据）\nxjcode login status        登录状态\nxjcode logout              清除本机凭据\nxjcode models [--refresh]  列出授权模型\nxjcode models --select    选择默认模型\nxjcode doctor [--probe] [-m 模型]  环境诊断（--probe 会调用一次指定模型）\nxjcode diagnostics         查看脱敏错误摘要（仅本机）\nxjcode                    交互编程\nxjcode exec \"任务\"         单次任务\nxjcode resume             恢复会话\nxjcode mcp                管理本地 MCP 扩展（会话内使用 /skills）\n\n命令详情：xjcode exec --help。默认上下文预算 32768 tokens，可在 config.toml 中调整。"
+                "XJCode — 支持交晓智与自定义 API 的本地编程工具\n\nxjcode login [--force]     西交登录，自动配置凭据\nxjcode login --api         配置自己的 API / Token\nxjcode provider --select   切换校园与备用 API\nxjcode update [--check]    检查并更新 XJCode\nxjcode uninstall [--purge] 卸载（默认保留个人数据）\nxjcode login status        登录状态\nxjcode logout              清除本机凭据\nxjcode models [--refresh]  列出授权模型\nxjcode models --select    选择默认模型\nxjcode doctor [--probe] [-m 模型]  环境诊断（--probe 会调用一次指定模型）\nxjcode diagnostics         查看脱敏错误摘要（仅本机）\nxjcode formula             离线公式模板、预览与复制\nxjcode                    交互编程\nxjcode exec \"任务\"         单次任务\nxjcode resume             恢复会话\nxjcode mcp                管理本地 MCP 扩展（会话内使用 /skills）\n\n命令详情：xjcode exec --help。默认上下文预算 32768 tokens，可在 config.toml 中调整。"
             );
             return Ok(());
         }
@@ -79,7 +82,7 @@ async fn run() -> Result<()> {
             }
             if args.get(1).and_then(|x| x.to_str()) == Some("status") {
                 let c = auth::load_at(&home)?;
-                let s = setup::load(&home)?;
+                let s = setup::load_current(&home)?;
                 ensure!(c.account_id == s.account_id, "账号与配置不一致");
                 println!(
                     "已保存登录凭据（未在线校验）\n工作区：{}\n默认模型：{}",
@@ -135,10 +138,9 @@ async fn run() -> Result<()> {
             ensure!(args.iter().skip(1).all(|a| a == "--refresh" || a == "--select"), "用法：xjcode models [--refresh] [--select]");
             let refresh = args.iter().any(|a| a == "--refresh");
             let choose = args.iter().any(|a| a == "--select");
-            let mut settings = setup::load(&home)?;
+            let mut settings = setup::load_current(&home)?;
             if refresh {
                 // Keep the user's current engine choice; checking does not choose a replacement.
-                settings.model = xjcode_native::doctor::Options::default().model_name(&home, &settings)?;
                 let c = auth::load_at(&home)?;
                 ensure!(c.account_id == settings.account_id, "账号不一致");
                 let models = TopClient::new(c)?.models(&settings.workspace_id).await?;
@@ -363,7 +365,7 @@ async fn configure(home: &Path, credentials: auth::Credentials) -> Result<()> {
         .iter()
         .map(|w| w.name.clone())
         .collect::<Vec<_>>();
-    let previous = setup::load(home)
+    let previous = setup::load_current(home)
         .ok()
         .filter(|s| s.account_id == credentials.account_id);
     let index = previous

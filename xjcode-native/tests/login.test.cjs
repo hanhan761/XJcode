@@ -93,7 +93,7 @@ test('portal empty list represented by null with explicit zero can create once',
   assert.equal(b.frames.length,1);
 });
 test('ambiguous or inconsistent empty list never creates credentials', async () => {
-  for (const listResult of [{Items:null},{Items:null,Total:2},{Items:[],Total:-1},{Items:'bad',Total:0}]) {
+  for (const listResult of [{Items:null},{Items:null,Total:2},{Items:[],Total:-1},{Items:'bad',Total:0}, {Items:null,Total:false}, {Items:null,Total:''}, {Items:[null],Total:1}, {Items:[{}],Total:0}]) {
     const b=browser([],{listResult}); await b.tick(); await b.tick();
     assert.deepEqual(b.calls,['GetSelfInfo','ListAccessKey']);
     assert.equal(b.frames[0].access_key,'$xjcode-web-session$');

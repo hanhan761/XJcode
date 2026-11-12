@@ -20,6 +20,13 @@ pub fn load(home: &Path) -> Result<Settings> {
     crate::capabilities::apply(home, &mut settings);
     Ok(settings)
 }
+/// The TUI saves the selected model to config.toml. The discovered directory in
+/// xjtu.json is a cache and must not override that more recent user choice.
+pub fn load_current(home: &Path) -> Result<Settings> {
+    let mut settings = load(home)?;
+    settings.model = crate::doctor::Options::default().model_name(home, &settings)?;
+    Ok(settings)
+}
 pub fn catalog(s: &Settings) -> Value {
     json!({"models":s.models.iter().map(|m|json!({
         "slug":m.name,"display_name":m.name,"description":if m.verified_image_input {"交晓智原生接口 · 支持图片"} else if m.platform_supports_images() {"交晓智原生接口 · 支持图片（平台声明）"} else {"交晓智原生接口"},
@@ -92,6 +99,21 @@ mod tests {
             workspace_name: "工作区".into(), model: "fixture-model".into(),
             models: vec![Model { name: "fixture-model".into(), service_id: "service".into(),
                 upstream_name: "upstream".into(), source_type: "external".into(), features: vec![], verified_image_input: false }] }
+    }
+    #[test]
+    fn refreshing_or_logging_in_preserves_a_model_selected_in_the_tui() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut original = settings();
+        let mut second = original.models[0].clone();
+        second.name = "second-model".into();
+        original.models.push(second);
+        save(dir.path(), &original).unwrap();
+        let config = std::fs::read_to_string(dir.path().join("config.toml")).unwrap();
+        std::fs::write(dir.path().join("config.toml"), config.replacen("fixture-model", "second-model", 1)).unwrap();
+        let current = load_current(dir.path()).unwrap();
+        assert_eq!(current.model, "second-model");
+        save(dir.path(), &current).unwrap();
+        assert_eq!(load_current(dir.path()).unwrap().model, "second-model");
     }
     #[test]
     fn config_update_preserves_user_extensions() {

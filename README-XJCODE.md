@@ -4,12 +4,12 @@ XJCode 是基于 OpenAI Codex 源码的本地编程命令行工具，使用西�
 
 ## 安装与开始
 
-普通用户：从[官方网站](https://xjcode.wenshanzhike.com/)下载并双击 **XJCode-Setup.exe**，自动准备 Node.js 和 XJCode，无需解压或管理员权限。安装完成后重新打开 PowerShell。
+优先使用 PowerShell 安装：`irm https://xjcode.wenshanzhike.com/install.ps1 | iex`。也可从[官方网站](https://xjcode.wenshanzhike.com/)下载并双击 **XJCode-Setup.exe**。安装器自动准备 Node.js 和 XJCode，无需解压或管理员权限。安装完成后重新打开 PowerShell。
 
 已有 Node.js 22 或以上：直接用 npm 安装 .tgz 文件或网站提供的 tarball URL。安装命令：
 
 ~~~powershell
-npm install -g https://xjcode.wenshanzhike.com/releases/0.1.5/xjcode-0.1.5.tgz
+npm install -g https://xjcode.wenshanzhike.com/releases/0.1.11/xjcode-0.1.11.tgz
 xjcode login
 cd D:\your-project
 xjcode
@@ -17,7 +17,7 @@ xjcode
 
 网站安装器和 npm 包均自带原生组件；npm 包无需 postinstall 脚本和二次下载。网站提供直接安装 URL，npm 官方短包名尚未发布，详见 [安装与发布说明](INSTALLATION.md)。Windows x64 和 WebView2 Runtime 为运行要求。
 
-`xjcode login` 打开独立校园登录窗口。完成学校认证后，程序自动读取当前账号的有效 API 密钥、核验账号归属，列出工作区及授权模型供选择。不会要求手工复制 token，也不会读取其他工具保存的凭据。已登录且密钥有效时，再次 login 直接复用；`xjcode login --force` 重新打开校园认证，可切换账号。
+`xjcode login` 打开独立校园登录窗口。完成学校认证后，程序优先读取当前账号的有效 API 密钥；无法获取时使用同一账号的校园 HTTPS 会话，核验账号归属，列出工作区及授权模型供选择。不会要求手工复制 token，也不会读取其他工具保存的凭据。已登录且凭据有效时，再次 login 直接复用；`xjcode login --force` 重新打开校园认证，可切换账号。
 
 ```powershell
 xjcode login status
@@ -29,6 +29,7 @@ xjcode exec "检查当前项目的测试失败原因并修复"
 xjcode resume
 xjcode mcp --help
 xjcode logout
+xjcode formula
 ```
 
 `doctor --probe` 会调用一次 `~/.xjcode/config.toml` 中当前默认模型；可用 `xjcode doctor --probe -m qwen3.7-max` 明确检查某个交晓智授权模型，不修改默认设置。普通 `doctor` 只核验身份和模型目录。读写文件、执行命令、审批与沙箱、会话恢复、AGENTS.md、skills 和本地 MCP 由 Codex 引擎提供。具体 CLI 参数见 `xjcode exec --help`。交互界面部分提示仍沿用上游英文。
@@ -51,11 +52,11 @@ xjcode logout
 - 优先复用当前账号最新的有效 API 密钥。没有有效密钥且不足两个时创建一个；已有两个但均不可用时提示用户在校园平台管理，不擅自删除或禁用任何密钥。
 - API secret 解密后以 Windows DPAPI 当前用户方式加密保存于 `%USERPROFILE%\.xjcode\credentials.dpapi`。用户可通过绝对路径 `XJCODE_HOME` 改变目录。配置及会话与 `.codex` 分离。
 - 登录组件通过限当前用户访问的命名管道交付凭据，不通过命令参数、日志或模型上下文传递密钥。logout 仅删除本机凭据，不撤销服务器密钥，也不删除已有会话。
-- 模型请求直接调用学校原生 HMAC TOP 接口，无本地 HTTP 中转服务，无 OpenAI 模型回退。当前平台原生入口是 `http://ai.xjtu.edu.cn:30040/`；HMAC 验证请求签名，**不提供传输加密**。代码上下文和工具结果会发送到校园平台，并形成平台会话，应在受信校园网络使用。网页认证仍使用 HTTPS。
+- 密钥入口的模型请求直接调用学校原生 HMAC TOP 接口；校园会话入口使用平台 HTTPS 网关和受限的会话 Cookie。无本地 HTTP 中转服务，无 OpenAI 模型回退。当前平台原生入口是 `http://ai.xjtu.edu.cn:30040/`；HMAC 验证请求签名，**不提供传输加密**。代码上下文和工具结果会发送到校园平台，并形成平台会话，应在受信校园网络使用。网页认证仍使用 HTTPS。
 
 ## 第一版范围
 
-当前适配文字对话，以及交晓智目录声明支持图片、或在同一账号与模型部署下经双图实测确认的图片输入。默认保守上下文窗口为 32768 tokens；可通过引擎配置调整，但需与实际模型容量匹配。可选模型只来自当前账号的真实授权，图片能力不根据模型名称猜测。语音、OpenAI Web Search、云任务、远程 app-server 及自动更新不在本版范围。
+当前适配文字对话，以及交晓智目录声明支持图片、或在同一账号与模型部署下经双图实测确认的图片输入。默认保守上下文窗口为 32768 tokens；可通过引擎配置调整，但需与实际模型容量匹配。可选模型只来自当前账号的真实授权，图片能力不根据模型名称猜测。语音、OpenAI Web Search、云任务及远程 app-server 不在当前范围；更新检查和 xjcode update 已实现。
 
 图片使用：更新后重新打开 `xjcode`，通过 `/model` 选择说明中带“支持图片”的交晓智模型，再拖入单张图片文件，或用 `Alt+V` 粘贴截图；终端能将 `Ctrl+V` 传给应用时也可使用。输入框出现 `[Image #1]` 表示附件已加入，提交后才会发送。已确认能力的模型仅显示“支持图片”，命令列表显示 `[图片]`；只来自平台声明的能力仍单独标注。2026-10-19 全部 24 个授权模型的结果见[测试报告](docs/xjcode/vision-20261019/REPORT.md)，7 个经双图确认。平台声明支持的模型也可能暂时调用失败。程序不会自动切换模型。
 
@@ -75,7 +76,7 @@ xjcode logout
 .\scripts\build-xjcode.ps1 -Profile release
 ```
 
-脚本识别 Visual Studio，使用锁文件构建引擎、登录器和 Windows 沙箱辅助程序，运行交晓智针对性测试，生成 `dist\xjcode-0.1.5-windows-x64-<profile>.zip`。包内附 SHA256 校验清单，安装前核验。源码下载如需代理，请仅在本机配置 Cargo/Git；不要把代理凭据提交到仓库。
+脚本识别 Visual Studio，使用锁文件构建引擎、登录器和 Windows 沙箱辅助程序，运行交晓智针对性测试，生成 `dist\xjcode-0.1.11-windows-x64-<profile>.zip`。包内附 SHA256 校验清单，安装前核验。源码下载如需代理，请仅在本机配置 Cargo/Git；不要把代理凭据提交到仓库。
 
 模块职责：
 
@@ -140,3 +141,9 @@ xjcode logout
 npm 安装更新会先暂存并验证，再切换包目录，保留一份可识别的旧包供故障恢复。Windows 卸载需要等当前程序退出，结果位置由命令输出；不会终止其他会话。缺少安装归属记录的便携版或旧安装，请先运行一次官网新版安装器迁移。0.1.4 没有 update 命令，需要先重新运行一键安装。
 
 自动化配置可使用 `xjcode login --api --base-url https://example.org/v1 --model model-id --wire-api responses --key-stdin`，从标准输入提供 Token；不要将密钥放在命令参数中。
+
+## 0.1.11：公式输入与选模一致性
+
+会话内输入 `/formula`，或在 PowerShell 运行 `xjcode formula`，打开离线编辑器，无需登录。支持分式、上下标、根号、偏导、积分、求和、向量、矩阵、方程组及常用力学公式。选中文字后点模板可嵌入，实时预览，可撤销/重做、复制 LaTeX 或 Markdown、保存 `.md`。粘贴回 XJCode 后再发送；编辑器本身不调用模型、不上传公式，只在当前标签页保留草稿。数学预览由本地 KaTeX 0.19.1 生成 MathML，见 THIRD_PARTY_NOTICES.md。
+
+命令行模型列表、登录状态、目录刷新和重新登录均读取会话保存的默认模型，避免使用旧目录缓存覆盖用户选择。登录对模糊空列表、非法总数或损坏的条目不创建密钥。官网将未识别的模型状态显示为待确认。

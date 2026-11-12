@@ -1,0 +1,6 @@
+# KaTeX 0.19.1
+
+MIT licensed; see LICENSE. Bundled for offline MathML formula previews.
+Source: https://registry.npmjs.org/katex/-/katex-0.19.1.tgz
+Integrity: sha512-jG8uKntjSEcm2EpQOh0XturpPuuC9r3Sq5HLHdsFdWZT27E672SF19QEi+of0/YeOy15lDgRhKvr5614uRrEfA==
+Only the browser renderer is included; no CDN or runtime downloads.

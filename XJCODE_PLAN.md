@@ -13,3 +13,7 @@ Upstream: openai/codex e790ce271749ce431e446a9e2cc66485fe60f931.
 
 Evidence and remaining acceptance checks: [XJCODE_VALIDATION.md](XJCODE_VALIDATION.md).
 No shared proxy service, no OpenAI model fallback, no credentials in model context/logs.
+
+## 0.1.11 follow-through
+
+Offline formula input, session/CLI model consistency, login-list robustness and health-summary corrections are implemented. Verification and limits: [0.1.11 acceptance](docs/xjcode/0.1.11/VALIDATION.md).
