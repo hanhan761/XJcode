@@ -21,10 +21,11 @@ function browser(keys, options = {}) {
       assert.equal(init.credentials, 'same-origin');
       assert.equal(init.headers['x-csrf-token'], 'fixture-csrf');
       if (action === 'GetSelfInfo' && options.failIdentity && calls.filter(s => s === 'GetSelfInfo').length <= options.failIdentity) throw new Error('network');
+      if (action === 'ListAccessKey' && options.forbiddenList) return {ok:false, status:403};
       if (action === 'ListAccessKey' && options.failList) throw new Error('network');
       if (action === 'CreateAccessKey' && options.failCreate) throw new Error('timeout');
       const Result = action === 'GetSelfInfo' ? { User: { ID: 'account', TenantID: 'tenant' } }
-        : action === 'ListAccessKey' ? { Items: keys, Total: keys.length }
+        : action === 'ListAccessKey' ? (options.listResult || { Items: keys, Total: keys.length })
         : { AccessKey: { AccessKey: 'created', SecretKey: 'encrypted' } };
       return { ok: true, json: async () => ({ Result }) };
     }
@@ -84,4 +85,27 @@ test('failed read never creates a key and handoff events show safe guidance', as
   assert.deepEqual(b.calls,['GetSelfInfo','ListAccessKey']);assert.equal(b.frames.length,0);
   b.signal('xjcode-handoff-slow');b.signal('xjcode-handoff-failed');
   assert.ok(b.statuses.some(s=>s.includes('等待 XJCode')));assert.ok(b.statuses.some(s=>s.includes('未能接收')));
+});
+
+test('portal empty list represented by null with explicit zero can create once', async () => {
+  const b=browser([], {listResult:{Items:null,Total:0}});
+  await b.tick(); await b.tick();
+  assert.deepEqual(b.calls,['GetSelfInfo','ListAccessKey','CreateAccessKey']);
+  assert.equal(b.frames.length,1);
+});
+test('ambiguous or inconsistent empty list never creates credentials', async () => {
+  for (const listResult of [{Items:null},{Items:null,Total:2},{Items:[],Total:-1},{Items:'bad',Total:0}]) {
+    const b=browser([],{listResult}); await b.tick(); await b.tick();
+    assert.deepEqual(b.calls,['GetSelfInfo','ListAccessKey']);
+    assert.equal(b.frames.length,0);
+    assert.ok(b.statuses.some(s=>s.includes('列表格式异常')));
+  }
+});
+test('403 and uncertain create have distinct safe guidance', async () => {
+  const denied=browser([],{forbiddenList:true});await denied.tick();
+  assert.ok(denied.statuses.some(s=>s.includes('拒绝读取密钥列表（403）')));
+  assert.deepEqual(denied.calls,['GetSelfInfo','ListAccessKey']);
+  const uncertain=browser([],{failCreate:true});await uncertain.tick();await uncertain.tick();
+  assert.ok(uncertain.statuses.some(s=>s.includes('创建结果未确认')));
+  assert.equal(uncertain.calls.filter(x=>x==='CreateAccessKey').length,1);
 });

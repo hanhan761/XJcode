@@ -51,22 +51,35 @@
     clearInterval(timer);
     status('校园登录成功，正在为 XJCode 配置凭据…');
     try {
-      const result = await api('ListAccessKey');
-      if (!Array.isArray(result.Items)) throw new Error('KEY_FORMAT');
-      const keys = result.Items;
+      let result;
+      try { result = await api('ListAccessKey'); }
+      catch (error) { throw new Error(error.message === 'HTTP_403' ? 'KEY_LIST_FORBIDDEN' : 'KEY_LIST_FAILED'); }
+      // The portal itself accepts a null Items field for an empty list.
+      // Only treat it as empty when the reported total explicitly confirms zero.
+      if (!result || (!Array.isArray(result.Items) && !(result.Items == null && result.Total != null && Number(result.Total) === 0))) throw new Error('KEY_LIST_FORMAT');
+      if (result.Total != null && (!Number.isSafeInteger(Number(result.Total)) || Number(result.Total) < 0)) throw new Error('KEY_LIST_FORMAT');
+      const keys = result.Items || [];
       let key = keys.filter(k => Number(k.Status) === 1 && k.SecretKey && k.AccessKey)
         .sort((a,b) => String(b.CreatedTime).localeCompare(String(a.CreatedTime)) || String(a.AccessKey).localeCompare(String(b.AccessKey)))[0];
       if (!key) {
         if (Math.max(keys.length, Number(result.Total) || 0) >= 2) throw new Error('KEY_LIMIT');
         // A creation with an uncertain result must never be retried in this window.
-        key = (await api('CreateAccessKey', {Status: 1}))?.AccessKey;
+        try { key = (await api('CreateAccessKey', {Status: 1}))?.AccessKey; }
+        catch { throw new Error('KEY_CREATE_UNKNOWN'); }
       }
       if (!key?.AccessKey || !key?.SecretKey) throw new Error('KEY_FORMAT');
       window.ipc.postMessage(JSON.stringify({nonce, account_id: user.ID, tenant_id: user.TenantID, access_key: key.AccessKey, encrypted_secret: key.SecretKey}));
       status('已提交登录信息，正在等待 XJCode 确认；请先不要关闭窗口。');
     } catch (e) {
-      const message = e.message === 'KEY_LIMIT' ? '已有两个不可用密钥。请在交晓智密钥管理页面处理后重新登录；XJCode 未删除或启用任何旧密钥。' : '凭据配置失败或请求结果不明。请检查交晓智密钥管理页面后重新登录；本次不会自动重试创建密钥。';
-      status(message);
+      const messages = {
+        KEY_LIMIT: '已有两个不可用密钥。请在交晓智密钥管理页面处理后重新登录；XJCode 未删除或启用任何旧密钥。',
+        KEY_LIST_FORBIDDEN: '交晓智拒绝读取密钥列表（403）。请在交晓智确认账号权限，或联系学校平台管理员。',
+        KEY_LIST_FAILED: '读取交晓智密钥列表失败，本次没有创建密钥。请检查校园网或 VPN，稍后重新登录。',
+        KEY_LIST_FORMAT: '交晓智返回的密钥列表格式异常，本次没有创建密钥。请联系 XJCode 管理员。',
+        KEY_CREATE_UNKNOWN: '新密钥创建结果未确认。请先检查交晓智密钥管理页面，再重新登录；本次不会自动重试创建。',
+        KEY_FORMAT: '交晓智返回的密钥信息不完整。请先检查交晓智密钥管理页面，再重新登录。'
+      };
+      status(messages[e?.message] || '凭据配置失败。请查看交晓智密钥管理页面，并联系 XJCode 管理员。');
     }
   }, 1500);
 })();
