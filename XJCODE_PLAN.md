@@ -17,3 +17,7 @@ No shared proxy service, no OpenAI model fallback, no credentials in model conte
 ## 0.1.11 follow-through
 
 Offline formula input, session/CLI model consistency, login-list robustness and health-summary corrections are implemented. Verification and limits: [0.1.11 acceptance](docs/xjcode/0.1.11/VALIDATION.md).
+
+## 0.1.12 personal workspace login
+
+Fixed valid empty team directories hiding personal spaces; separately verified identity and personal model grants for the user-authorized reproduction account. [Acceptance](docs/xjcode/0.1.12/VALIDATION.md).

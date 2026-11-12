@@ -375,6 +375,7 @@ async fn configure(home: &Path, credentials: auth::Credentials) -> Result<()> {
         .unwrap_or_else(|| select("工作区", &labels))?;
     let workspace = &workspaces[index];
     let models = client.models(&workspace.id).await?;
+    ensure!(!models.is_empty(), "所选交晓智工作区暂无已授权且运行中的模型。请用同一账号打开交晓智网页，检查个人空间是否已开通及模型授权，再重新运行 xjcode login；程序未创建工作区或更改原配置。");
     let labels = models.iter().map(|m| m.name.clone()).collect::<Vec<_>>();
     let index = previous
         .as_ref()

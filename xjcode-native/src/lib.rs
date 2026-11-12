@@ -5,6 +5,7 @@ pub mod catalog_watch;
 mod diagnostics;
 pub mod doctor;
 pub mod formula;
+mod workspace_catalog;
 pub mod images;
 pub mod login_status;
 #[cfg(windows)]

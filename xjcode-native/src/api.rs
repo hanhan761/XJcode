@@ -439,6 +439,8 @@ impl TopClient {
         field(&r["User"], "ID")
     }
     pub async fn workspaces(&self) -> Result<Vec<Workspace>> {
+        let account = self.identity().await?;
+        ensure!(account == self.credentials.account_id, "校园账号校验不一致，未推导个人空间");
         let mut all = Vec::new();
         for page in 1..=100 {
             let r = self
@@ -448,17 +450,20 @@ impl TopClient {
                     json!({"ListOpt":{"PageNumber":page,"PageSize":100},"Filter":{}}),
                 )
                 .await?;
-            let items = r["Items"].as_array().context("工作区目录格式错误")?;
+            let items = crate::workspace_catalog::items(&r, "工作区目录 ListWorkspace")?;
             for v in items {
+                let id = field(v, "ID")?;
+                ensure!(!all.iter().any(|w: &Workspace| w.id == id), "工作区分页返回重复条目，已停止读取");
                 all.push(Workspace {
-                    id: field(v, "ID")?,
+                    id,
                     name: v["Name"].as_str().unwrap_or("未命名工作区").into(),
                 });
             }
-            if items.is_empty()
-                || all.len() >= r["Total"].as_u64().unwrap_or(all.len() as u64) as usize
-            {
-                return Ok(all);
+            let total = crate::workspace_catalog::total(&r, "工作区目录 ListWorkspace")?;
+            ensure!(total.is_none_or(|n| n >= all.len()), "工作区目录的总数与分页条目不一致");
+            if items.is_empty() || total.is_some_and(|n| all.len() >= n)
+                || (total.is_none() && items.len() < 100) {
+                return crate::workspace_catalog::include_personal(all, &account);
             }
         }
         bail!("工作区分页超出限制")
@@ -472,7 +477,7 @@ impl TopClient {
             )
             .await?;
         let mut models = Vec::new();
-        for v in r["Items"].as_array().context("模型目录格式错误")? {
+        for v in crate::workspace_catalog::items(&r, "模型目录 ListModelByWorkspaceGrant")? {
             if v["Type"] != "text-generation"
                 || v["Status"] != "Running"
                 || v["Granted"] != true
@@ -959,6 +964,37 @@ mod tests {
             diagnostics_path: Some(log),
             timeouts: RequestTimeouts::default(),
         }
+    }
+
+    #[tokio::test]
+    async fn empty_team_directory_discovers_same_account_personal_space_without_creating_it() {
+        let body = json!({"Result":{"User":{"ID":"fixture-account"},"Items":null,"Total":0}}).to_string();
+        let (endpoint, server) = mock_server(200, "", &body);
+        let dir = tempfile::tempdir().unwrap();
+        let client = mock_client(endpoint, dir.path().join("requests.jsonl"));
+        let spaces = client.workspaces().await.unwrap();
+        assert_eq!(spaces.len(), 1);
+        assert_eq!(spaces[0].id, "personal-fixture-account");
+        assert_eq!(server.join().unwrap(), 2); // identity + team list only
+    }
+
+    #[tokio::test]
+    async fn personal_space_cannot_be_derived_from_a_different_cached_account() {
+        let body = json!({"Result":{"User":{"ID":"different-account"},"Items":null,"Total":0}}).to_string();
+        let (endpoint, server) = mock_server(200, "", &body);
+        let dir = tempfile::tempdir().unwrap();
+        let client = mock_client(endpoint, dir.path().join("requests.jsonl"));
+        assert!(client.workspaces().await.unwrap_err().to_string().contains("账号校验不一致"));
+        assert_eq!(server.join().unwrap(), 1);
+    }
+
+    #[tokio::test]
+    async fn empty_model_grants_are_an_empty_directory_not_a_format_error() {
+        let (endpoint, server) = mock_server(200, "", r#"{"Result":{"Items":null,"Total":0}}"#);
+        let dir = tempfile::tempdir().unwrap();
+        let client = mock_client(endpoint, dir.path().join("requests.jsonl"));
+        assert!(client.models("personal-fixture-account").await.unwrap().is_empty());
+        assert_eq!(server.join().unwrap(), 1);
     }
 
     #[test]
