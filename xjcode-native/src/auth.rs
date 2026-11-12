@@ -28,8 +28,27 @@ impl Drop for Credentials {
         self.secret.zeroize();
     }
 }
+pub const WEB_SESSION: &str = "$xjcode-web-session$";
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WebSession { pub iam_cookie: String, pub aigw_cookie: String, pub csrf: String }
+impl Drop for WebSession { fn drop(&mut self) { self.iam_cookie.zeroize(); self.aigw_cookie.zeroize(); self.csrf.zeroize(); } }
 impl Credentials {
+    pub fn web_session(&self) -> Result<Option<WebSession>> {
+        if self.access_key != WEB_SESSION { return Ok(None); }
+        let session: WebSession = serde_json::from_str(&self.secret).context("校园会话格式无效")?;
+        ensure!(!session.iam_cookie.is_empty() && !session.aigw_cookie.is_empty() && session.iam_cookie.len() + session.aigw_cookie.len() <= 12000 && session.csrf.len() <= 2048, "校园会话格式无效");
+        reqwest::header::HeaderValue::from_str(&session.iam_cookie).context("校园会话格式无效")?;
+        reqwest::header::HeaderValue::from_str(&session.aigw_cookie).context("校园会话格式无效")?;
+        reqwest::header::HeaderValue::from_str(&session.csrf).context("校园会话格式无效")?;
+        Ok(Some(session))
+    }
     pub fn validate(&self) -> Result<()> {
+        if self.access_key == WEB_SESSION {
+            ensure!(!self.account_id.is_empty() && self.account_id.len() <= 512, "登录返回的账号信息无效");
+            self.web_session()?;
+            return Ok(());
+        }
         ensure!(
             (8..=256).contains(&self.access_key.len())
                 && (8..=256).contains(&self.secret.len())

@@ -471,8 +471,8 @@ async fn browser_login() -> Result<auth::Credentials> {
         ensure!(result.nonce == nonce, "登录校验码不匹配");
         let credentials = auth::Credentials {
             account_id: result.account_id,
-            access_key: result.access_key,
-            secret: auth::decode_secret(&result.encrypted_secret, &result.tenant_id)?,
+            access_key: result.access_key.clone(),
+            secret: if result.access_key == auth::WEB_SESSION { result.encrypted_secret.clone() } else { auth::decode_secret(&result.encrypted_secret, &result.tenant_id)? },
         };
         credentials.validate()?;
         Ok::<_, anyhow::Error>(credentials)

@@ -55,14 +55,13 @@ test('two unusable keys never trigger create, delete or activate', async () => {
   const b = browser([{ Status: 0 }, { Status: 0 }]);
   await b.tick();
   assert.deepEqual(b.calls, ['GetSelfInfo', 'ListAccessKey']);
-  assert.equal(b.frames.length, 0);
-  assert.ok(b.statuses.some(s => s.includes('两个不可用密钥')));
+  assert.equal(b.frames[0].access_key, '$xjcode-web-session$');
 });
 test('uncertain creation is never repeated', async () => {
   const b = browser([], { failCreate: true });
   await b.tick(); await b.tick();
   assert.equal(b.calls.filter(s => s === 'CreateAccessKey').length, 1);
-  assert.equal(b.frames.length, 0);
+  assert.equal(b.frames[0].access_key, '$xjcode-web-session$');
 });
 test('non-portal origins cannot access IAM or IPC', async () => {
   const b = browser([], { origin: 'https://sso.xjtu.edu.cn' });
@@ -82,7 +81,7 @@ test('identity failures give actionable feedback and a later success still hands
 });
 test('failed read never creates a key and handoff events show safe guidance', async () => {
   const b=browser([],{failList:true});await b.tick();await b.tick();
-  assert.deepEqual(b.calls,['GetSelfInfo','ListAccessKey']);assert.equal(b.frames.length,0);
+  assert.deepEqual(b.calls,['GetSelfInfo','ListAccessKey']);assert.equal(b.frames[0].access_key,'$xjcode-web-session$');
   b.signal('xjcode-handoff-slow');b.signal('xjcode-handoff-failed');
   assert.ok(b.statuses.some(s=>s.includes('等待 XJCode')));assert.ok(b.statuses.some(s=>s.includes('未能接收')));
 });
@@ -97,15 +96,14 @@ test('ambiguous or inconsistent empty list never creates credentials', async () 
   for (const listResult of [{Items:null},{Items:null,Total:2},{Items:[],Total:-1},{Items:'bad',Total:0}]) {
     const b=browser([],{listResult}); await b.tick(); await b.tick();
     assert.deepEqual(b.calls,['GetSelfInfo','ListAccessKey']);
-    assert.equal(b.frames.length,0);
-    assert.ok(b.statuses.some(s=>s.includes('列表格式异常')));
+    assert.equal(b.frames[0].access_key,'$xjcode-web-session$');
   }
 });
 test('403 and uncertain create have distinct safe guidance', async () => {
   const denied=browser([],{forbiddenList:true});await denied.tick();
-  assert.ok(denied.statuses.some(s=>s.includes('拒绝读取密钥列表（403）')));
+  assert.equal(denied.frames[0].access_key,'$xjcode-web-session$');
   assert.deepEqual(denied.calls,['GetSelfInfo','ListAccessKey']);
   const uncertain=browser([],{failCreate:true});await uncertain.tick();await uncertain.tick();
-  assert.ok(uncertain.statuses.some(s=>s.includes('创建结果未确认')));
+  assert.equal(uncertain.frames[0].access_key,'$xjcode-web-session$');
   assert.equal(uncertain.calls.filter(x=>x==='CreateAccessKey').length,1);
 });

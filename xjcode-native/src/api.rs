@@ -226,7 +226,8 @@ impl TopClient {
             "2023-08-01"
         };
         let mut params = BTreeMap::from([("Action", action), ("Version", version)]);
-        if service != "iam" {
+        let session = self.credentials.web_session()?;
+        if service != "iam" && session.is_none() {
             params.insert("X-Account-Id", &self.credentials.account_id);
         }
         let query = params
@@ -251,14 +252,21 @@ impl TopClient {
             // reqwest's typed is_connect flag denotes connector failure, before
             // the HTTP request is dispatched. Never retry a sent/uncertain write.
             let stamp = Utc::now().format("%Y%m%dT%H%M%SZ").to_string();
-            let mut headers = signed_headers(
-                &self.credentials,
-                service,
-                "ai.xjtu.edu.cn:30040",
-                &query,
-                &body,
-                &stamp,
-            )?;
+            let (endpoint, mut headers) = if let Some(session) = &session {
+                ensure!(matches!(service, "iam" | "aigw"), "不支持的校园会话服务");
+                let mut headers = HeaderMap::new();
+                headers.insert(reqwest::header::CONTENT_TYPE, "application/json".parse()?);
+                headers.insert(reqwest::header::COOKIE, if service == "iam" { session.iam_cookie.parse()? } else { session.aigw_cookie.parse()? });
+                headers.insert("x-csrf-token", session.csrf.parse()?);
+                headers.insert("x-top-region", "cn-north-1".parse()?);
+                #[cfg(not(test))]
+                let origin = "https://ai.xjtu.edu.cn";
+                #[cfg(test)]
+                let origin = if self.endpoint == ENDPOINT { "https://ai.xjtu.edu.cn" } else { self.endpoint.trim_end_matches('/') };
+                (format!("{origin}/api/{service}"), headers)
+            } else {
+                (self.endpoint.clone(), signed_headers(&self.credentials, service, "ai.xjtu.edu.cn:30040", &query, &body, &stamp)?)
+            };
             if stream {
                 headers.insert("accept", "text/event-stream".parse()?);
             }
@@ -267,7 +275,7 @@ impl TopClient {
                 .max(Duration::from_millis(1));
             match self
                 .client
-                .post(format!("{}?{query}", self.endpoint))
+                .post(format!("{endpoint}?{query}"))
                 .headers(headers)
                 .body(body.clone())
                 .timeout(remaining)
@@ -311,6 +319,9 @@ impl TopClient {
             }
         };
         let status = response.status();
+        if session.is_some() && status.as_u16() == 401 {
+            bail!("校园登录已过期，请运行 xjcode login 重新登录");
+        }
         if !status.is_success() {
             let mut details = ServerDetails::from_headers(response.headers(), &self.credentials);
             // Read only a bounded JSON error envelope, and retain only allowlisted identifiers.
@@ -886,6 +897,48 @@ mod tests {
             requests
         });
         (endpoint, server)
+    }
+
+    #[tokio::test]
+    async fn portal_session_uses_scoped_https_route_and_does_not_sign() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let endpoint = format!("http://{}/", listener.local_addr().unwrap());
+        let server = thread::spawn(move || {
+            let (mut socket, _) = listener.accept().unwrap();
+            socket.set_read_timeout(Some(Duration::from_secs(3))).unwrap();
+            let mut request = Vec::new();
+            loop {
+                let mut buf = [0; 4096]; let n = socket.read(&mut buf).unwrap(); assert!(n > 0); request.extend_from_slice(&buf[..n]);
+                if let Some(end) = request.windows(4).position(|p| p == b"\r\n\r\n") {
+                    let hdr=String::from_utf8_lossy(&request[..end]);
+                    let len=hdr.lines().find_map(|line| { let (k,v)=line.split_once(':')?; k.eq_ignore_ascii_case("content-length").then(||v.trim().parse::<usize>().unwrap()) }).unwrap_or(0);
+                    if request.len() >= end+4+len { break; }
+                }
+            }
+            let body = r#"{"Result":{"ok":true}}"#;
+            write!(socket,"HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",body.len(),body).unwrap();
+            String::from_utf8(request).unwrap()
+        });
+        let dir=tempfile::tempdir().unwrap();
+        let mut client=mock_client(endpoint,dir.path().join("log"));
+        client.credentials = Credentials { access_key: crate::auth::WEB_SESSION.into(), secret: serde_json::to_string(&crate::auth::WebSession {iam_cookie:"iam_fixture=secret_iam_fixture".into(),aigw_cookie:"aigw_fixture=secret_aigw_fixture".into(),csrf:"csrf_fixture".into()}).unwrap(), account_id:"fixture-account".into() };
+        client.credentials.validate().unwrap();
+        let value=client.call("aigw","CreateConversation",json!({})).await.unwrap(); assert_eq!(value["ok"],true);
+        let req=server.join().unwrap().to_lowercase();
+        assert!(req.starts_with("post /api/aigw?action=createconversation&version=2023-08-01 "));
+        assert!(req.contains("cookie: aigw_fixture=secret_aigw_fixture"));
+        assert!(!req.contains("secret_iam_fixture")); assert!(req.contains("x-csrf-token: csrf_fixture")); assert!(!req.contains("authorization:"));
+    }
+
+    #[tokio::test]
+    async fn expired_session_reports_login_and_never_retries() {
+        let (endpoint, server) = mock_server(401, "", "{}");
+        let dir=tempfile::tempdir().unwrap(); let log=dir.path().join("log");
+        let mut client=mock_client(endpoint,log.clone());
+        client.credentials=Credentials {access_key:crate::auth::WEB_SESSION.into(),secret:serde_json::to_string(&crate::auth::WebSession{iam_cookie:"sid=secret_iam_fixture".into(),aigw_cookie:"sid=secret_aigw_fixture".into(),csrf:"csrf_fixture".into()}).unwrap(),account_id:"fixture-account".into()};
+        let error=client.call("iam","GetSelfInfo",json!({})).await.unwrap_err().to_string();
+        assert!(error.contains("校园登录已过期"));assert!(!error.contains("secret_"));assert_eq!(server.join().unwrap(),1);
+        if log.exists() {assert!(!std::fs::read_to_string(log).unwrap().contains("secret_"));}
     }
 
     fn mock_client(endpoint: String, log: PathBuf) -> TopClient {
@@ -1539,6 +1592,16 @@ mod tests {
         ] {
             assert!(!combined.contains(forbidden));
         }
+    }
+
+    #[tokio::test]
+    async fn session_completion_runs_all_three_stages_and_streams() {
+        let (endpoint, server) = completion_server(false);
+        let dir = tempfile::tempdir().unwrap(); let log = dir.path().join("requests.jsonl");
+        let mut client = mock_client(endpoint, log.clone());
+        client.credentials = Credentials { access_key: crate::auth::WEB_SESSION.into(), secret: serde_json::to_string(&crate::auth::WebSession { iam_cookie:"iam_fixture=secret_iam_fixture".into(), aigw_cookie:"aigw_fixture=secret_aigw_fixture".into(), csrf:"csrf_fixture".into() }).unwrap(), account_id:"fixture-account".into() };
+        assert_eq!(client.complete("workspace-test", &completion_model(), "private prompt").await.unwrap(), "confirmed reply");
+        assert_eq!(server.join().unwrap(), 3); assert!(!log.exists());
     }
 
     #[tokio::test]

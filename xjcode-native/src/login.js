@@ -12,6 +12,7 @@
     }
     if (el) el.textContent = text;
   };
+  window.addEventListener('xjcode-session-unavailable', () => status('校园会话无法交接。请关闭窗口并重新运行 xjcode login；若仍失败，请联系 XJCode 管理员。'));
   window.addEventListener('xjcode-handoff-failed', () => status('网页已登录，但 XJCode 未能接收登录信息。请关闭此窗口，回到 PowerShell 重新运行 xjcode login；若仍失败，请检查安全软件是否阻止本机通信。'));
   window.addEventListener('xjcode-handoff-slow', () => status('网页已登录，正在等待 XJCode 接收登录信息；请先不要关闭窗口。'));
   const api = async (action, body = {}) => {
@@ -71,15 +72,13 @@
       window.ipc.postMessage(JSON.stringify({nonce, account_id: user.ID, tenant_id: user.TenantID, access_key: key.AccessKey, encrypted_secret: key.SecretKey}));
       status('已提交登录信息，正在等待 XJCode 确认；请先不要关闭窗口。');
     } catch (e) {
-      const messages = {
-        KEY_LIMIT: '已有两个不可用密钥。请在交晓智密钥管理页面处理后重新登录；XJCode 未删除或启用任何旧密钥。',
-        KEY_LIST_FORBIDDEN: '交晓智拒绝读取密钥列表（403）。请在交晓智确认账号权限，或联系学校平台管理员。',
-        KEY_LIST_FAILED: '读取交晓智密钥列表失败，本次没有创建密钥。请检查校园网或 VPN，稍后重新登录。',
-        KEY_LIST_FORMAT: '交晓智返回的密钥列表格式异常，本次没有创建密钥。请联系 XJCode 管理员。',
-        KEY_CREATE_UNKNOWN: '新密钥创建结果未确认。请先检查交晓智密钥管理页面，再重新登录；本次不会自动重试创建。',
-        KEY_FORMAT: '交晓智返回的密钥信息不完整。请先检查交晓智密钥管理页面，再重新登录。'
-      };
-      status(messages[e?.message] || '凭据配置失败。请查看交晓智密钥管理页面，并联系 XJCode 管理员。');
+      // Keep the same campus account: a portal session does not consume key slots.
+      try {
+        const item = document.cookie.split(';').map(s => s.trim()).find(s => s.startsWith('x-csrf-token='));
+        const csrf = item ? decodeURIComponent(item.slice(13)) : '';
+        window.ipc.postMessage(JSON.stringify({nonce, account_id:user.ID, tenant_id:user.TenantID, access_key:'$xjcode-web-session$', encrypted_secret:csrf}));
+        status('校园认证成功，正在连接 XJCode；请先不要关闭窗口。');
+      } catch { status('校园认证完成，但无法交接登录。请关闭窗口并重新运行 xjcode login。'); }
     }
   }, 1500);
 })();

@@ -155,9 +155,16 @@ impl ConnectRetry {
     }
 }
 
+fn contains_session_secret(value: &str, credentials: &Credentials) -> bool {
+    if credentials.access_key != crate::auth::WEB_SESSION { return false; }
+    let Ok(Some(session)) = credentials.web_session() else { return true; };
+    (!session.csrf.is_empty() && value.contains(&session.csrf)) || session.iam_cookie.split(';').chain(session.aigw_cookie.split(';')).filter_map(|part| part.trim().split_once('=').map(|(_, value)| value)).any(|secret| secret.len() >= 8 && value.contains(secret))
+}
+
 fn safe_identifier(value: &str, credentials: &Credentials) -> Option<String> {
     let value = value.trim();
-    if value.is_empty()
+    if contains_session_secret(value, credentials)
+        || value.is_empty()
         || value.len() > 128
         || !value
             .bytes()
@@ -177,7 +184,8 @@ fn safe_identifier(value: &str, credentials: &Credentials) -> Option<String> {
 
 fn safe_model_label(value: &str, credentials: &Credentials) -> Option<String> {
     let value = value.trim();
-    if value.is_empty()
+    if contains_session_secret(value, credentials)
+        || value.is_empty()
         || value.len() > 512
         || value.chars().any(char::is_control)
         || [
