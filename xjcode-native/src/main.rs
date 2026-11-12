@@ -477,7 +477,14 @@ async fn browser_login() -> Result<auth::Credentials> {
         credentials.validate()?;
         Ok::<_, anyhow::Error>(credentials)
     };
-    let result = tokio::select! {result=tokio::time::timeout(Duration::from_secs(300),receive)=>result.context("校园登录超时").and_then(|r|r),_status=child.wait()=>Err(anyhow::anyhow!("登录窗口已关闭或初始化失败；请确认 Microsoft Edge WebView2 Runtime 已安装"))};
+    let result = tokio::select! {
+        biased;
+        result=tokio::time::timeout(Duration::from_secs(300),receive)=>result.context("校园登录超时；若已进入交晓智首页，请查看登录窗口底部提示并重试").and_then(|r|r),
+        status=child.wait()=>match status {
+            Ok(status)=>Err(anyhow::anyhow!(xjcode_native::login_status::child_exit(status.code()))),
+            Err(_)=>Err(anyhow::anyhow!("无法读取登录窗口状态，请重新运行 xjcode login")),
+        }
+    };
     // Let the GUI close its WebView cleanly before removing its temporary cookies.
     if result.is_ok() {
         let _ = server.write_all(&[1]).await;

@@ -2,6 +2,7 @@
   if (window.top !== window || location.origin !== 'https://ai.xjtu.edu.cn') return;
   const nonce = __XJCODE_NONCE__;
   let busy = false;
+  let identityFailures = 0;
   const status = text => {
     let el = document.getElementById('xjcode-login-status');
     if (!el && document.body) {
@@ -11,24 +12,42 @@
     }
     if (el) el.textContent = text;
   };
+  window.addEventListener('xjcode-handoff-failed', () => status('网页已登录，但 XJCode 未能接收登录信息。请关闭此窗口，回到 PowerShell 重新运行 xjcode login；若仍失败，请检查安全软件是否阻止本机通信。'));
+  window.addEventListener('xjcode-handoff-slow', () => status('网页已登录，正在等待 XJCode 接收登录信息；请先不要关闭窗口。'));
   const api = async (action, body = {}) => {
     const csrf = document.cookie.split(';').map(s => s.trim()).find(s => s.startsWith('x-csrf-token='));
-    const response = await fetch('/api/iam?Action=' + action + '&Version=2024-12-25', {
-      method: 'POST', credentials: 'same-origin', redirect: 'error',
-      headers: {'content-type': 'application/json', 'x-top-region': 'cn-north-1', 'x-csrf-token': csrf ? decodeURIComponent(csrf.slice(13)) : ''},
-      body: JSON.stringify(body), signal: AbortSignal.timeout(20000)
-    });
-    if (!response.ok) throw new Error('HTTP_' + response.status);
-    const result = await response.json();
-    if (result.ResponseMetadata?.Error) throw new Error('IAM_ERROR');
-    return result.Result;
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    let timeout;
+    try {
+      const request = (async () => {
+        const response = await fetch('/api/iam?Action=' + action + '&Version=2024-12-25', {
+          method: 'POST', credentials: 'same-origin', redirect: 'error',
+          headers: {'content-type': 'application/json', 'x-top-region': 'cn-north-1', 'x-csrf-token': csrf ? decodeURIComponent(csrf.slice(13)) : ''},
+          body: JSON.stringify(body), ...(controller ? {signal: controller.signal} : {})
+        });
+        if (!response.ok) throw new Error('HTTP_' + response.status);
+        const result = await response.json();
+        if (result.ResponseMetadata?.Error) throw new Error('IAM_ERROR');
+        return result.Result;
+      })();
+      const deadline = new Promise((_, reject) => { timeout = setTimeout(() => { if (controller) controller.abort(); reject(new Error('TIMEOUT')); }, 20000); });
+      return await Promise.race([request, deadline]);
+    } finally { if (timeout) clearTimeout(timeout); }
   };
   const timer = setInterval(async () => {
     if (busy || !document.body) return;
     busy = true;
     let user;
-    try { user = (await api('GetSelfInfo'))?.User; } catch { busy = false; return; }
-    if (!user?.ID || !user?.TenantID) { busy = false; return; }
+    try { user = (await api('GetSelfInfo'))?.User; } catch {
+      identityFailures++;
+      if (identityFailures >= 3) status('正在等待交晓智确认登录。如果已经进入交晓智首页但长时间停留，请检查校园网或学校 VPN，再重新运行 xjcode login。');
+      busy = false; return;
+    }
+    if (!user?.ID || !user?.TenantID) {
+      identityFailures++;
+      if (identityFailures >= 3) status('正在等待交晓智确认登录。如果已经进入交晓智首页但长时间停留，请检查校园网或学校 VPN，再重新运行 xjcode login。');
+      busy = false; return;
+    }
     clearInterval(timer);
     status('校园登录成功，正在为 XJCode 配置凭据…');
     try {
@@ -44,7 +63,7 @@
       }
       if (!key?.AccessKey || !key?.SecretKey) throw new Error('KEY_FORMAT');
       window.ipc.postMessage(JSON.stringify({nonce, account_id: user.ID, tenant_id: user.TenantID, access_key: key.AccessKey, encrypted_secret: key.SecretKey}));
-      status('凭据已安全交给 XJCode，请回到 PowerShell 选择工作区和模型。');
+      status('已提交登录信息，正在等待 XJCode 确认；请先不要关闭窗口。');
     } catch (e) {
       const message = e.message === 'KEY_LIMIT' ? '已有两个不可用密钥。请在交晓智密钥管理页面处理后重新登录；XJCode 未删除或启用任何旧密钥。' : '凭据配置失败或请求结果不明。请检查交晓智密钥管理页面后重新登录；本次不会自动重试创建密钥。';
       status(message);

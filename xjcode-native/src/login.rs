@@ -1,9 +1,12 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
 mod login_navigation;
+mod login_handoff;
 #[cfg(windows)]
 #[derive(Debug)]
 enum LoginEvent {
     Close,
+    HandoffFailed,
+    HandoffSlow,
     Navigate(String),
 }
 #[cfg(windows)]
@@ -20,7 +23,6 @@ fn main() {
 fn run() -> anyhow::Result<()> {
     use anyhow::{Context, ensure};
     use std::{
-        io::{Read, Write},
         path::PathBuf,
         sync::{
             Arc,
@@ -61,6 +63,8 @@ fn run() -> anyhow::Result<()> {
     let script =
         include_str!("login.js").replace("__XJCODE_NONCE__", &serde_json::to_string(&nonce)?);
     let sent = Arc::new(AtomicBool::new(false));
+    let handoff_failed = Arc::new(AtomicBool::new(false));
+    let ipc_failed = handoff_failed.clone();
     let webview = WebViewBuilder::new_with_web_context(&mut context)
         // Campus SSO must use the same direct route as the native API client.
         // Scope this to our isolated WebView; never modify the system proxy.
@@ -96,20 +100,32 @@ fn run() -> anyhow::Result<()> {
             {
                 return;
             }
-            let result = (|| -> std::io::Result<()> {
-                let mut file = std::fs::OpenOptions::new()
-                    .read(true)
-                    .write(true)
-                    .open(&pipe)?;
-                let bytes = request.body().as_bytes();
-                file.write_all(&(bytes.len() as u32).to_le_bytes())?;
-                file.write_all(bytes)?;
-                file.flush()?;
-                let mut ack = [0];
-                file.read_exact(&mut ack)
-            })();
-            let _ = result;
-            let _ = proxy.send_event(LoginEvent::Close);
+            // Pipe I/O must not block the WebView UI thread. Keep the window
+            // open until the launcher explicitly acknowledges receipt.
+            let bytes = zeroize::Zeroizing::new(request.body().as_bytes().to_vec());
+            let pipe = pipe.clone();
+            let result_proxy = proxy.clone();
+            let failed = ipc_failed.clone();
+            let done = Arc::new(AtomicBool::new(false));
+            let slow_done = done.clone();
+            let slow_proxy = proxy.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_secs(8));
+                if !slow_done.load(Ordering::SeqCst) {
+                    let _ = slow_proxy.send_event(LoginEvent::HandoffSlow);
+                }
+            });
+            std::thread::spawn(move || {
+                let result = std::fs::OpenOptions::new().read(true).write(true).open(&pipe)
+                    .and_then(|mut file| login_handoff::send(&mut file, &bytes));
+                done.store(true, Ordering::SeqCst);
+                if result.is_ok() {
+                    let _ = result_proxy.send_event(LoginEvent::Close);
+                } else {
+                    failed.store(true, Ordering::SeqCst);
+                    let _ = result_proxy.send_event(LoginEvent::HandoffFailed);
+                }
+            });
         })
         .build(&window)?;
     // Explicitly show after WebView creation, including when the CLI was launched hidden.
@@ -122,7 +138,14 @@ fn run() -> anyhow::Result<()> {
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..
-            } => *control_flow = ControlFlow::Exit,
+            } => *control_flow = if handoff_failed.load(Ordering::SeqCst) { ControlFlow::ExitWithCode(2) } else { ControlFlow::Exit },
+            Event::UserEvent(LoginEvent::HandoffFailed) => {
+                window.set_title("XJCode — 登录交接失败，请返回 PowerShell 重试");
+                let _ = webview.evaluate_script("window.dispatchEvent(new Event(\"xjcode-handoff-failed\"))");
+            }
+            Event::UserEvent(LoginEvent::HandoffSlow) if !handoff_failed.load(Ordering::SeqCst) => {
+                let _ = webview.evaluate_script("window.dispatchEvent(new Event(\"xjcode-handoff-slow\"))");
+            }
             Event::UserEvent(LoginEvent::Close) => *control_flow = ControlFlow::Exit,
             Event::UserEvent(LoginEvent::Navigate(url)) => {
                 if webview.load_url(&url).is_err() {
