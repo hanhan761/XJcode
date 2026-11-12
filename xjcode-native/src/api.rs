@@ -259,6 +259,8 @@ impl TopClient {
                 headers.insert(reqwest::header::COOKIE, if service == "iam" { session.iam_cookie.parse()? } else { session.aigw_cookie.parse()? });
                 headers.insert("x-csrf-token", session.csrf.parse()?);
                 headers.insert("x-top-region", "cn-north-1".parse()?);
+                headers.insert(reqwest::header::ORIGIN, "https://ai.xjtu.edu.cn".parse()?);
+                headers.insert(reqwest::header::REFERER, "https://ai.xjtu.edu.cn/".parse()?);
                 #[cfg(not(test))]
                 let origin = "https://ai.xjtu.edu.cn";
                 #[cfg(test)]

@@ -464,8 +464,8 @@ async fn browser_login() -> Result<auth::Credentials> {
         server.connect().await?;
         let size = server.read_u32_le().await? as usize;
         ensure!(size <= 16384, "登录响应过大");
-        let mut data = vec![0; size];
-        server.read_exact(&mut data).await?;
+        let mut data = zeroize::Zeroizing::new(vec![0; size]);
+        server.read_exact(data.as_mut_slice()).await?;
         let result =
             serde_json::from_slice::<auth::LoginResult>(&data).context("登录响应格式无效")?;
         ensure!(result.nonce == nonce, "登录校验码不匹配");
